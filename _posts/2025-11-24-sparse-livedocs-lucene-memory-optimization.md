@@ -262,10 +262,6 @@ So there are actually two optimizations here: sparse storage for memory (when de
 
 A few design choices worth highlighting:
 
-### Why Not RoaringBitmap?
-
-A reasonable question. RoaringBitmap is a popular compressed bitmap format that handles sparse data well. But it adds complexity: container management, compression/decompression overhead, and a dependency on external code. For LiveDocs, we need fast random access (`get(docId)`) on every search hit, and we need to integrate with Lucene's existing infrastructure. A simple `int[]` of deleted IDs gives us O(log n) random access via binary search, O(k) iteration, and zero dependencies. At ≤1% deletions, the binary search depth remains small and branch-predictable. In overall benchmark results, no regressions were observed that could be attributed to the representation change. Sometimes the boring solution wins.
-
 ### Why No On-Disk Changes?
 
 The optimization is purely in-memory. Segments still write the standard Lucene90 format. On load, we read the dense representation and convert to sparse if the deletion rate is low enough. The conversion overhead is negligible compared to the ongoing memory savings.
