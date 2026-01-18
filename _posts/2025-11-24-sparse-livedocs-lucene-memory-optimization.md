@@ -187,7 +187,7 @@ This pattern is particularly valuable for:
 
 **Where this doesn't apply**: The "compute then correct" pattern requires the aggregation to be reversible. Percentiles, cardinality estimates, scripted aggregations, and operations with document-level side effects can't use this approach. For those, you still need to filter deleted documents during the main pass.
 
-The related work in [Lucene #13084](https://github.com/apache/lucene/issues/13084) and [#15226](https://github.com/apache/lucene/issues/15226) explores these aggregation optimizations in detail.
+The related work in [#13084](https://github.com/apache/lucene/issues/13084) and [#15226](https://github.com/apache/lucene/issues/15226) explores these aggregation optimizations in detail.
 
 ## Does It Actually Work? Let's Measure.
 
@@ -298,7 +298,7 @@ The result is up to 40x less memory for low-deletion segments and up to 30x fast
 
 ## Resources
 
-- [PR #15413: Sparse LiveDocs](https://github.com/apache/lucene/pull/15413): The implementation with full discussion
+- [#15413](https://github.com/apache/lucene/pull/15413): The implementation with full discussion
 - [SparseFixedBitSet](https://lucene.apache.org/core/5_2_1/core/org/apache/lucene/util/SparseFixedBitSet.html): Block-sparse bitset used for low-deletion segments
 - [FixedBitSet](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/util/FixedBitSet.html): Dense bitset used for high-deletion segments
 - [Lucene Codec Documentation](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/codecs/package-summary.html): How Lucene stores segment metadata
