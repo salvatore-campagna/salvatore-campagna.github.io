@@ -302,5 +302,6 @@ The change ships in a future Lucene release. Your segments will get faster and l
 ## Resources
 
 - [PR #15413: Sparse LiveDocs](https://github.com/apache/lucene/pull/15413): The implementation with full discussion
+- [SparseFixedBitSet](https://lucene.apache.org/core/5_2_1/core/org/apache/lucene/util/SparseFixedBitSet.html): Block-sparse bitset used for low-deletion segments
+- [FixedBitSet](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/util/FixedBitSet.html): Dense bitset used for high-deletion segments
 - [Lucene Codec Documentation](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/codecs/package-summary.html): How Lucene stores segment metadata
-- [FixedBitSet](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/util/FixedBitSet.html): The underlying data structure
