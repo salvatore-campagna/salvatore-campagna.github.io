@@ -141,6 +141,16 @@ The math above is simplified. In reality, both representations have overhead:
 
 Including JVM object headers and alignment, the actual crossover point shifts slightly, but the 1% threshold remains safe. The benchmarks reflect practical JVM object footprint rather than theoretical byte counts, so the reported savings are representative of real-world memory usage.
 
+### What Happens When Deletes Occur After a Segment Is Loaded?
+
+LiveDocs is per-segment and immutable from the reader's perspective. When a delete occurs on an already-loaded segment, Lucene does not mutate the existing LiveDocs instance. Instead, deletes are recorded internally and a new LiveDocs instance is materialized when a reader is refreshed.
+
+Existing readers retain a reference to the previous LiveDocs and continue to see a consistent snapshot of the segment. New readers observe the updated LiveDocs. This snapshot-based design avoids synchronization on the read path and preserves Lucene's lock-free concurrency model.
+
+The sparse versus dense representation is selected when LiveDocs is materialized for a reader, based on the current deletion density at that time. If a segment initially qualifies for sparse storage and later accumulates enough deletions to cross the 1% threshold, newly opened readers will switch to the dense representation. Readers holding the earlier sparse instance are unaffected.
+
+In practice, segments with high delete churn are often merged away before accumulating many deletions. The sparse representation is therefore optimized for the common case: segments that are largely stable and have low deletion rates.
+
 ## What's the API Look Like?
 
 The key design decision was creating a proper `LiveDocs` interface that extends `Bits`:
