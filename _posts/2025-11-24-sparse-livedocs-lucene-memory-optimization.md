@@ -47,7 +47,7 @@ When does LiveDocs exist? Only when a segment has deletions. A freshly written s
 Where does LiveDocs get checked?
 
 - **Search**: Effectively every query filters through LiveDocs. If the bit is 0, the document is skipped.
-- **Merge**: This is when deleted documents are physically removed. The merge process iterates LiveDocs to decide which documents to copy to the new segment.[^soft-deletes]
+- **Merge**: This is when hard-deleted documents are physically removed. During a merge, Lucene consults LiveDocs to skip deleted documents when copying survivors into the new segment.[^soft-deletes]
 - **Aggregations**: Facet counts and statistics need to exclude deleted documents (more on this later).
 
 Why "two-phase deletion"? The deleted document's data (stored fields, doc values) remains in the segment until a merge removes it. Mark now, reclaim space later.
@@ -62,7 +62,7 @@ In practice, deletion rates are typically well under 1%. Documents get updated, 
 
 What if we stored only the deleted document IDs instead of a bit for every document?
 
-As a baseline, imagine we stored deleted doc IDs in a simple 32-bit int array:
+As a baseline, imagine we stored deleted document IDs in a simple 32-bit int array:
 
 ```
 Dense (current):  maxDoc / 8 bytes
@@ -94,7 +94,7 @@ The fix introduces two implementations behind a common `LiveDocs` interface:
 | **SparseLiveDocs** | ≤1% deletions | Block-sparse bitset (`SparseFixedBitSet`) |
 | **DenseLiveDocs** | >1% deletions | Traditional `FixedBitSet` |
 
-As segments accumulate deletions over time, the format reader automatically selects the right implementation based on deletion density when loading a segment. No configuration needed.
+As segments accumulate deletions over time, the appropriate implementation is selected when LiveDocs is materialized for a reader, based on the current deletion density. No configuration needed.
 
 ```java
 // Simplified view of the selection logic
@@ -143,13 +143,11 @@ Including JVM object headers and alignment, the actual crossover point shifts sl
 
 ### What Happens When Deletes Occur After a Segment Is Loaded?
 
-LiveDocs is per-segment and immutable from the reader's perspective. When a delete occurs on an already-loaded segment, Lucene does not mutate the existing LiveDocs instance. Instead, deletes are recorded internally and a new LiveDocs instance is materialized when a reader is refreshed.
+LiveDocs is immutable from the reader's perspective. When deletes occur, Lucene does not mutate the LiveDocs instance held by already-open readers. Instead, deletes become visible when a reader is refreshed, at which point a new LiveDocs snapshot is materialized.
 
-Existing readers retain a reference to the previous LiveDocs and continue to see a consistent snapshot of the segment. New readers observe the updated LiveDocs. This snapshot-based design avoids synchronization on the read path and preserves Lucene's lock-free concurrency model.
+Existing readers continue to see a consistent view of the segment. New readers observe the updated deletions. The choice between sparse and dense LiveDocs is made when this snapshot is created, based on the current deletion density.
 
-The sparse versus dense representation is selected when LiveDocs is materialized for a reader, based on the current deletion density at that time. If a segment initially qualifies for sparse storage and later accumulates enough deletions to cross the 1% threshold, newly opened readers will switch to the dense representation. Readers holding the earlier sparse instance are unaffected.
-
-In practice, segments with high delete churn are often merged away before accumulating many deletions. The sparse representation is therefore optimized for the common case: segments that are largely stable and have low deletion rates.
+In practice, segments that accumulate many deletions are often merged away, so most segments stay in the low-deletion regime where sparse storage applies.
 
 ## What's the API Look Like?
 
@@ -296,9 +294,9 @@ The benchmarks aren't just "proof it works." They're designed to catch regressio
 
 ## Conclusion
 
-LiveDocs is checked on every search hit and iterated during certain aggregations. For segments with few deletions, the traditional dense bitset wastes memory storing mostly ones and forces full scans to find the few zeros.
+LiveDocs is consulted on every search hit and iterated during certain aggregations. When deletions are rare, storing one bit per document wastes memory and forces full scans to find very few deleted entries.
 
-The fix is straightforward: use sparse storage when deletions are rare, dense when they're not. The 1% threshold ensures we only switch when the win is unambiguous.
+The solution is simple: use sparse storage when deletions are rare, dense storage when they are not. The 1% threshold ensures the switch only happens when the benefit is clear.
 
 The result is up to 40x less memory for low-deletion segments and up to 30x faster iteration over deleted documents, with no API changes and no configuration required.
 
