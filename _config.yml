@@ -7,7 +7,7 @@ tagline: Software Engineering in the Trenches
 description: >-
   Deep dives into JVM internals, systems programming, search engines,
   and performance engineering. Java, Go, Rust, Lucene, and beyond.
-url: "https://salvatorecampagna.github.io"
+url: "https://salvatore-campagna.github.io"
 baseurl: ""
 
 # Social / Contact
@@ -40,7 +40,7 @@ comments:
     repo:
     issue_term:
   giscus:
-    repo: salvatore-campagna/salvatorecampagna.github.io
+    repo: salvatore-campagna/salvatore-campagna.github.io
     repo_id: # Get from https://giscus.app/
     category: Announcements
     category_id: # Get from https://giscus.app/
