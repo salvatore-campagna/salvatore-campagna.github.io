@@ -285,7 +285,6 @@ One thing I'm particularly pleased with is how we validated this. [The PR](https
 - **Parameterized benchmarks** covering segment sizes from 100K to 100M documents
 - **Multiple deletion patterns**: random, clustered, and uniform
 - **Pathological case testing** to ensure no regressions
-- **AssertingLiveDocs wrapper** that validates behavior without modifying production code
 
 The benchmarks aren't just "proof it works." They're designed to catch regressions if someone modifies the implementation later. If you can't measure it, you can't trust it.
 
