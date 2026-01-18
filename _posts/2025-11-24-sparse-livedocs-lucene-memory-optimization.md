@@ -11,7 +11,7 @@ image:
 
 ## TL;DR
 
-When a segment has deletions, Lucene allocates one bit per document for LiveDocs — even if only a tiny fraction are deleted. A segment with 100 million documents and 0.1% deletions? That's 12MB for a bitset that's 99.9% ones.
+When a segment has deletions, Lucene allocates one bit per document for LiveDocs, even if only a tiny fraction are deleted. A segment with 100 million documents and 0.1% deletions? That's 12MB for a bitset that's 99.9% ones.
 
 [This PR](https://github.com/apache/lucene/pull/15413) introduces adaptive LiveDocs: sparse storage for low deletion segments, dense for the rest. No configuration required.
 
@@ -75,7 +75,7 @@ Crossover point: maxDoc/8 = deletedCount * 4
 
 So even with this naive approach, sparse wins for anything under ~3% deletions.
 
-But the `int[]` model is a conservative baseline. The real implementation uses [`SparseFixedBitSet`](https://lucene.apache.org/core/5_2_1/core/org/apache/lucene/util/SparseFixedBitSet.html), a block-based sparse bitset that is more space-efficient than a plain array of document IDs. Because `SparseFixedBitSet` uses less memory than the baseline model predicts, the true crossover point—where sparse and dense use equal memory—is likely higher than 3%. The 1% threshold used in practice is a deliberately conservative design choice, ensuring consistent wins across all deletion patterns without risking regressions in adversarial cases.
+But the `int[]` model is a conservative baseline. The real implementation uses [`SparseFixedBitSet`](https://lucene.apache.org/core/5_2_1/core/org/apache/lucene/util/SparseFixedBitSet.html), a block-based sparse bitset that is more space-efficient than a plain array of document IDs. Because `SparseFixedBitSet` uses less memory than the baseline model predicts, the true crossover point (where sparse and dense use equal memory) is likely higher than 3%. The 1% threshold used in practice is a deliberately conservative design choice, ensuring consistent wins across all deletion patterns without risking regressions in adversarial cases.
 
 **How `SparseFixedBitSet` stays small:**
 - Divides the bit space into 4096-bit blocks (64 longs per block)
@@ -287,17 +287,15 @@ One thing I'm particularly pleased with is how we validated this. [The PR](https
 - **Pathological case testing** to ensure no regressions
 - **AssertingLiveDocs wrapper** that validates behavior without modifying production code
 
-The benchmarks aren't just "proof it works." They're designed to catch regressions if someone modifies the implementation later. This is DFT thinking applied to software: build testability into the design, not as an afterthought. If you can't measure it, you can't trust it.
+The benchmarks aren't just "proof it works." They're designed to catch regressions if someone modifies the implementation later. If you can't measure it, you can't trust it.
 
 ## Conclusion
 
-The dense `FixedBitSet` implementation served Lucene well for years. It's simple, predictable, and fast for random access. When deletion rates varied widely and iterating over deleted documents wasn't a common operation, the uniform approach made sense.
+LiveDocs is checked on every search hit and iterated during certain aggregations. For segments with few deletions, the traditional dense bitset wastes memory storing mostly ones and forces full scans to find the few zeros.
 
-What changed? As deployments grew larger and memory pressure increased, the cost of storing mostly-ones bitsets became harder to ignore. Operations that need to iterate deleted documents (like certain aggregations and corrections) benefit from a representation optimized for the common case. The usage patterns evolved, and now the implementation can evolve with them.
+The fix is straightforward: use sparse storage when deletions are rare, dense when they're not. The 1% threshold ensures we only switch when the win is unambiguous.
 
-By adapting to actual deletion density, we cut memory usage by up to 40x for low-deletion segments while maintaining full compatibility with existing code.
-
-The change ships in a future Lucene release. Your segments will get faster and lighter without you changing a line of code.
+The result is up to 40x less memory for low-deletion segments and up to 30x faster iteration over deleted documents, with no API changes and no configuration required.
 
 ## Resources
 
