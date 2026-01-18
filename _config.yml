@@ -1,0 +1,143 @@
+# Chirpy Theme Configuration
+theme: jekyll-theme-chirpy
+
+# Site Settings
+title: Salvatore Campagna
+tagline: Software Engineering in the Trenches
+description: >-
+  Deep dives into JVM internals, systems programming, search engines,
+  and performance engineering. Java, Go, Rust, Lucene, and beyond.
+url: "https://salvatorecampagna.github.io"
+baseurl: ""
+
+# Social / Contact
+github:
+  username: salvatore-campagna
+social:
+  name: Salvatore Campagna
+  email: ""
+  links:
+    - https://github.com/salvatore-campagna
+    - https://linkedin.com/in/salvatorecampagna
+
+# Site Verification (optional)
+# webmaster_verifications:
+#   google:
+#   bing:
+
+# Analytics (optional) - add your Google Analytics ID
+analytics:
+  google:
+    id: # "G-XXXXXXXXXX"
+
+# Comments - using Giscus (GitHub Discussions)
+# To set up: visit https://giscus.app/ and fill in your repo details
+comments:
+  provider: # giscus  (uncomment after configuring below)
+  disqus:
+    shortname:
+  utterances:
+    repo:
+    issue_term:
+  giscus:
+    repo: salvatore-campagna/salvatorecampagna.github.io
+    repo_id: # Get from https://giscus.app/
+    category: Announcements
+    category_id: # Get from https://giscus.app/
+    mapping: pathname
+    strict: 0
+    input_position: bottom
+    lang: en
+    reactions_enabled: 1
+
+# Self-hosted static assets
+assets:
+  self_host:
+    enabled: false
+
+# PWA (Progressive Web App)
+pwa:
+  enabled: true
+  cache:
+    enabled: true
+    deny_paths:
+
+# Theme mode: light / dark / (blank for auto)
+theme_mode:
+
+# Avatar (show in sidebar)
+avatar: /assets/images/avatar.jpg
+
+# Timezone
+timezone: Europe/Rome
+
+# Language
+lang: en
+
+# Table of Contents
+toc: true
+
+# Pagination
+paginate: 10
+
+# Build settings
+kramdown:
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: highlight
+    block:
+      line_numbers: true
+
+# Collections
+collections:
+  tabs:
+    output: true
+    sort_by: order
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      comments: true
+      toc: true
+      permalink: /posts/:title/
+  - scope:
+      path: _tabs
+      type: tabs
+    values:
+      layout: page
+      permalink: /:title/
+
+sass:
+  style: compressed
+
+# Compress HTML
+compress_html:
+  clippings: all
+  comments: all
+  endings: all
+  profile: false
+  blanklines: false
+  ignore:
+    envs: [development]
+
+# Plugins
+plugins:
+  - jekyll-paginate
+  - jekyll-sitemap
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-archives
+
+# Archives
+jekyll-archives:
+  enabled: [categories, tags]
+  layouts:
+    category: category
+    tag: tag
+  permalinks:
+    tag: /tags/:name/
+    category: /categories/:name/

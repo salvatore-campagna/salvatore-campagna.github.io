@@ -1,0 +1,19 @@
+# Social sharing platforms for posts
+# Icons from https://fontawesome.com/
+
+platforms:
+  - type: Twitter
+    icon: "fa-brands fa-x-twitter"
+    link: "https://twitter.com/intent/tweet?text=TITLE&url=URL"
+
+  - type: LinkedIn
+    icon: "fab fa-linkedin"
+    link: "https://www.linkedin.com/sharing/share-offsite/?url=URL"
+
+  - type: HackerNews
+    icon: "fab fa-hacker-news"
+    link: "https://news.ycombinator.com/submitlink?u=URL&t=TITLE"
+
+  - type: Reddit
+    icon: "fab fa-reddit"
+    link: "https://www.reddit.com/submit?url=URL&title=TITLE"
