@@ -60,7 +60,7 @@ The optimization comes from a simple observation: **most segments have very few 
 
 In practice, deletion rates are typically well under 1%. Documents get updated, old content expires, duplicates get removed. You're rarely deleting a large fraction of your index at once.
 
-What if we stored only the deleted document IDs instead of a bit for every document? (Why deleted and not live? Because at low deletion rates, there are far fewer deleted IDs to store.)
+What if we stored only the deleted document IDs instead of a bit for every document?
 
 As a baseline, imagine we stored deleted doc IDs in a simple 32-bit int array:
 
