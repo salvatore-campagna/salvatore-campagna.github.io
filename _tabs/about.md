@@ -12,8 +12,12 @@ I like understanding systems well enough that I can change them safely, measure 
 
 I believe code that can't be tested can't be trusted, and code that can't be trusted can't be changed safely. This isn't just a preference. It's the lens through which I evaluate every design decision. When I look at a system, I ask: can I prove it works? Can I measure it? Can someone else change it safely?
 
+<br>
+
 ![Turin, Italy](/assets/images/matteo-giallongo-yTn8ueddb_A-unsplash.jpg){: .rounded-10 }
 _Turin, Italy. Photo by [Matteo Giallongo](https://unsplash.com/@matteogiallongo) on Unsplash._
+
+<br>
 
 Currently, I work on the storage engine at [Elastic](https://elastic.co), focusing on time series, metrics, and observability workloads. The kind of data that arrives by the billions and needs to stick around for months. My job is making that economically viable through better compression, smarter indexing, and questioning assumptions about how things have always been done.
 
@@ -29,13 +33,21 @@ My obsession with testability actually comes from electronics and VLSI, where De
 
 Then payments at Adyen, where I built the second version of their Intelligent Payment Router. Different domain, same obsession: making the right decision, fast, at scale, and being able to prove it works.
 
+<br>
+
 ![Amsterdam, Netherlands](/assets/images/jonne-makikyro-knbve9xxH4U-unsplash.jpg){: .rounded-10 }
 _Amsterdam. Where I learned that correctness at scale is a systems problem, not a testing problem. Photo by [Jonne Mäkikyrö](https://unsplash.com/@jonne_makikyro) on Unsplash._
 
+<br>
+
 A stint at King taught me what "high throughput" really means when millions of people are playing games simultaneously.
+
+<br>
 
 ![Barcelona, Spain](/assets/images/dorian-d1-aX5NLrKgRBc-unsplash.jpg){: .rounded-10 }
 _Barcelona. Where "millions of concurrent users" stopped being an abstraction. Photo by [Dorian Mongel](https://unsplash.com/@dorian_d1) on Unsplash._
+
+<br>
 
 Eventually I found my way to Lucene and Elasticsearch, and something clicked. Search and storage sit at this intersection of computer science fundamentals and practical engineering that I find endlessly interesting. You need to understand data structures, compression theory, and distributed systems, but you also need to ship code that works in production. Theory that survives contact with reality.
 
