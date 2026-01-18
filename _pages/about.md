@@ -11,6 +11,9 @@ I like understanding systems well enough that I can change them safely, measure 
 
 I believe code that can't be tested can't be trusted, and code that can't be trusted can't be changed safely. This isn't just a preference. It's the lens through which I evaluate every design decision. When I look at a system, I ask: can I prove it works? Can I measure it? Can someone else change it safely?
 
+![Turin, Italy](/assets/images/matteo-giallongo-yTn8ueddb_A-unsplash.jpg){: .rounded-10 }
+_Turin, Italy. Photo by [Matteo Giallongo](https://unsplash.com/@matteogiallongo) on Unsplash._
+
 Currently, I work on the storage engine at [Elastic](https://elastic.co), focusing on time series, metrics, and observability workloads. The kind of data that arrives by the billions and needs to stick around for months. My job is making that economically viable through better compression, smarter indexing, and questioning assumptions about how things have always been done.
 
 The work I'm proudest of isn't measured primarily in pull requests or percentage improvements, though those exist. It's the compression techniques (delta encoding, GCD, bit-packing) that turned expensive storage problems into tractable ones. When a 100TB cluster costs $60-80K less per year to operate, that's not just an optimization. That's the difference between a feature being viable and being shelved.
