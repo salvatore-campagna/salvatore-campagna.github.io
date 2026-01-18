@@ -62,20 +62,28 @@ In practice, deletion rates are typically well under 1%. Documents get updated, 
 
 What if we stored only the deleted document IDs instead of a bit for every document? (Why deleted and not live? Because at low deletion rates, there are far fewer deleted IDs to store.)
 
-If we used a simple array of 32-bit document IDs, the math would work out like this:
+As a baseline, imagine we stored deleted doc IDs in a simple 32-bit int array:
 
 ```
 Dense (current):  maxDoc / 8 bytes
-Sparse (naive):   deletedCount * 4 bytes  (32-bit doc IDs)
+Sparse (baseline): deletedCount * 4 bytes  (32-bit int[])
 
 Crossover point: maxDoc/8 = deletedCount * 4
                  deletedCount = maxDoc/32
                  deletionRate = 1/32 ≈ 3.125%
 ```
 
-So even with a naive approach, sparse wins for anything under ~3% deletions. But we can do better than a flat array. The actual implementation uses `SparseFixedBitSet`, which divides the bit space into 4096-bit blocks and only allocates memory for blocks containing set bits. This is significantly more efficient than storing raw doc IDs, especially when deletions cluster together (which they often do in time-series data or batch updates).
+So even with this naive approach, sparse wins for anything under ~3% deletions.
 
-In practice, we use a conservative 1% threshold to ensure consistent wins across different deletion patterns.
+The real implementation does better: it uses [`SparseFixedBitSet`](https://lucene.apache.org/core/5_2_1/core/org/apache/lucene/util/SparseFixedBitSet.html) (a block-based sparse bitset) rather than a plain `int[]`. This keeps random-access fast while avoiding allocation for mostly-zero regions.
+
+**How `SparseFixedBitSet` stays small:**
+- Divides the bit space into 4096-bit blocks (64 longs per block)
+- Only materializes blocks that contain at least one set bit
+- Within each block, only stores the non-zero longs
+- Deletions that cluster together (common in time-series or batch updates) share blocks, further reducing overhead
+
+In practice, [the implementation](https://github.com/apache/lucene/pull/15413) uses a conservative 1% threshold to ensure consistent wins across different deletion patterns.
 
 ## How Does the Implementation Work?
 
@@ -83,7 +91,7 @@ The fix introduces two implementations behind a common `LiveDocs` interface:
 
 | Implementation | When Used | Storage |
 |----------------|-----------|---------|
-| **SparseLiveDocs** | ≤1% deletions | `SparseFixedBitSet` of deleted doc IDs |
+| **SparseLiveDocs** | ≤1% deletions | Block-sparse bitset (`SparseFixedBitSet`) |
 | **DenseLiveDocs** | >1% deletions | Traditional `FixedBitSet` |
 
 As segments accumulate deletions over time, the format reader automatically selects the right implementation based on deletion density when loading a segment. No configuration needed.
