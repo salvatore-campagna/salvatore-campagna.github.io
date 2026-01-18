@@ -11,7 +11,7 @@ image:
 
 ## TL;DR
 
-Lucene allocates one bit per document for LiveDocs regardless of how many documents are deleted. A segment with 100 million documents and 0.1% deletions? That's 12MB for a bitset that's 99.9% ones.
+When a segment has deletions, Lucene allocates one bit per document for LiveDocs — even if only a tiny fraction are deleted. A segment with 100 million documents and 0.1% deletions? That's 12MB for a bitset that's 99.9% ones.
 
 [This PR](https://github.com/apache/lucene/pull/15413) introduces adaptive LiveDocs: sparse storage for low deletion segments, dense for the rest. No configuration required.
 
@@ -137,7 +137,7 @@ The 1% threshold provides a comfortable margin. We're guaranteed at least 3x mem
 The math above is simplified. In reality, both representations have overhead:
 
 - **Dense**: `FixedBitSet` has object headers (~16 bytes) and the backing `long[]` has its own header and potential padding
-- **Sparse**: The `int[]` of deleted IDs has similar overhead, plus the wrapper object
+- **Sparse**: The `SparseFixedBitSet` has its own object and block-array overhead
 
 Including JVM object headers and alignment, the actual crossover point shifts slightly, but the 1% threshold remains safe. The benchmarks reflect practical JVM object footprint rather than theoretical byte counts, so the reported savings are representative of real-world memory usage.
 
@@ -178,7 +178,7 @@ This might seem like an obscure capability, but it unlocks a powerful optimizati
 
 This flips the complexity from O(maxDoc) to O(deletedDocs). For that 10 million document segment with 0.1% deletions, you go from 10 million operations to 10,000.
 
-But here's the catch: step 2 requires iterating over deleted documents efficiently. With a dense `FixedBitSet`, you'd scan all 10 million bits looking for zeros, which defeats the purpose. With `SparseLiveDocs`, you just walk the array of 10,000 deleted IDs.
+But here's the catch: step 2 requires iterating over deleted documents efficiently. With a dense `FixedBitSet`, you'd scan all 10 million bits looking for zeros, which defeats the purpose. With `SparseLiveDocs`, you iterate only the 10,000 deleted documents.
 
 This pattern is particularly valuable for:
 - **Histogram corrections** in numeric aggregations
@@ -229,7 +229,7 @@ Here's where it gets interesting. Iterating over deleted documents (something yo
 | 0.1% | 31.7ms | 1.0ms | **31.7x** |
 | 1.0% | 31.7ms | 8.5ms | **3.7x** |
 
-The dense implementation has to scan every bit. Sparse just walks the array.
+The dense implementation has to scan every bit. Sparse iterates only the deleted documents.
 
 ### What's the Worst Case?
 
