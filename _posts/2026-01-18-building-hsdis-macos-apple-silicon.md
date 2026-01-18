@@ -13,11 +13,11 @@ image:
 
 The JVM can show you the actual machine code the JIT generates, but this requires hsdis, a small disassembler plugin that is not bundled by default.
 
-This post shows how to make HotSpot's JIT-generated machine code observable on Apple Silicon, enabling low-level JVM performance analysis and tools like JMH's perfasm profiler, without relying on the full OpenJDK build system.
+This post shows how to make HotSpot's JIT-generated machine code observable on Apple Silicon by satisfying the JVM's minimal hsdis plugin contract directly, enabling low-level JVM performance analysis and tools like JMH's perfasm profiler without relying on the full OpenJDK build system.
 
-## What Happens When You Ask the JVM for Assembly?
+## The JVM's Hidden Output
 
-You're profiling a hot loop. The flamegraph points to a method, but you need to see *what the JIT actually generated*. Let's try the obvious thing:
+You're profiling a hot loop. The flamegraph points to a method, but you need to see *what the JIT actually generated*. The JVM has a diagnostic flag for this:
 
 ```bash
 java -XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly -version
@@ -33,7 +33,7 @@ And we get:
 
 Not helpful. The JVM is telling you it doesn't know how to disassemble its own machine code. It needs a plugin called **hsdis**, and it's not included by default.
 
-If you've spent hours trying to build hsdis on your M1/M2/M3/M4 Mac only to hit cryptic errors about Metal shaders (yes, really), you're not alone. This post shows you a faster way.
+If you've spent hours trying to build hsdis on your M1/M2/M3/M4 Mac only to hit cryptic errors about Metal shaders (yes, really), you're not alone. There's a simpler path that reveals what hsdis actually is.
 
 ## What is hsdis?
 
@@ -49,17 +49,19 @@ With it installed, `-XX:+PrintAssembly` transforms from useless to invaluable:
 0x000000010eed8188:   b.eq    #0x10eed81c0      ; branch if equal
 ```
 
-Now you can actually see:
-- Whether your loop got vectorized (look for SIMD instructions like `ld1`, `fmla`)
-- How the JIT optimized your code
-- Why that "simple" method is slower than expected
-- Whether bounds checks were eliminated
+With this visibility, you can answer questions that are otherwise guesswork:
+- Did the JIT vectorize the loop? (SIMD instructions like `ld1`, `fmla` confirm it)
+- Were bounds checks eliminated?
+- What instructions dominate the hot path?
+- Why is that "simple" method slower than expected?
 
 This is essential for serious performance work, especially when benchmarking with JMH.
 
-## Why Is This So Hard on Apple Silicon?
+## The JVM's Plugin Contract
 
-Building hsdis on Apple Silicon presents a few speed bumps:
+The JVM's requirements for hsdis are simple: a shared library that exports `decode_instructions_virtual` and is discoverable via `$JAVA_HOME/lib/server/` or the dynamic library path. That's the entire contract, and it applies to any platform where HotSpot runs. The complexity comes from the official build system, not from what the JVM actually needs.
+
+Building hsdis on Apple Silicon through the standard OpenJDK build presents challenges:
 
 | Challenge | Details |
 |-----------|---------|
@@ -76,17 +78,19 @@ configure: error: XCode tool 'metallib' neither found in path nor with xcrun
 
 Metal shaders? For a disassembler? The OpenJDK build system is designed to build the *entire JDK*, including macOS-specific UI components. Even with full Xcode installed, you might still hit this wall.
 
-There's a better way.
+Understanding what the JVM actually requires suggests a simpler approach.
 
-## Can We Just Compile It Directly?
+## Satisfying the Contract Directly
 
-Here's the insight: **hsdis is just a thin wrapper around a disassembly library**. The source is a single C file. Let's see if we can compile it directly with `clang`, bypassing the entire OpenJDK build system.
+The insight is that **hsdis is just a thin wrapper around a disassembly library**. The Capstone-based implementation is essentially a single C translation unit plus a shared header. The JVM doesn't care how you build it, only that the resulting library exports the right symbol.
 
-We'll use [Capstone](https://www.capstone-engine.org/), a lightweight, multi-architecture disassembly framework. Let's try it.
+This means we can compile it directly with `clang`, bypassing the entire OpenJDK build system and demonstrating what the JVM actually requires.
 
-### Prerequisites
+The disassembly backend we'll use is [Capstone](https://www.capstone-engine.org/), a lightweight, multi-architecture disassembly framework.
 
-Since we're bypassing the OpenJDK build system, we only need a C compiler and the disassembly library itself:
+### Minimal Dependencies
+
+To satisfy the contract directly, only two things are needed: a C compiler and the Capstone disassembly library:
 
 ```bash
 # Install Xcode Command Line Tools (if not already installed)
@@ -101,9 +105,9 @@ ls /opt/homebrew/opt/capstone/lib/libcapstone.dylib
 
 That's it. No full Xcode, no Metal tools, no autoconf nightmares.
 
-### Step 1: Get the hsdis Source
+### The Source
 
-Let's grab the source. We only need a few files from OpenJDK, about 3 files totaling a few KB. The easiest way is a shallow clone:
+The hsdis source lives in the OpenJDK repository. The relevant files total a few KB, so a shallow clone is sufficient:
 
 ```bash
 # Shallow clone just what we need (this downloads ~200MB, not the full 1GB+)
@@ -117,9 +121,9 @@ ls ~/workspace/openjdk-hsdis/src/utils/hsdis/
 
 > **Tip**: You can use any JDK version branch (jdk-17, jdk-21, jdk-22, etc.). The hsdis source is stable across versions.
 
-### Step 2: Compile hsdis
+### Building the Library
 
-Let's see if this actually works. One command, no build system:
+With the source and Capstone in place, a single `clang` invocation produces what the JVM expects:
 
 ```bash
 cd ~/workspace/openjdk-hsdis
@@ -137,7 +141,7 @@ clang -dynamiclib \
     src/utils/hsdis/capstone/hsdis-capstone.c
 ```
 
-Let's break down what each flag does:
+Each flag addresses a specific part of the contract:
 
 | Flag | Purpose |
 |------|---------|
@@ -150,9 +154,9 @@ Let's break down what each flag does:
 
 The compilation finishes almost instantly.
 
-### Step 3: Did It Work?
+### Verifying the Contract
 
-Let's verify we built the right thing:
+The resulting library must be a 64-bit ARM shared object exporting the symbol the JVM expects:
 
 ```bash
 # Check the library architecture
@@ -164,11 +168,11 @@ nm -gU build/hsdis/hsdis-aarch64.dylib | grep decode
 # 0000000000000500 T _decode_instructions_virtual
 ```
 
-The `_decode_instructions_virtual` symbol is the entry point the JVM looks for. If you see it, you're golden.
+The `_decode_instructions_virtual` symbol is the JVM's entry point into the plugin. If it's present, the contract is satisfied.
 
-### Step 4: Does the JVM See It Now?
+### Plugin Placement
 
-Copy the library to where the JVM can find it:
+The JVM searches for hsdis in specific locations. The library can be placed either alongside a project or system-wide:
 
 ```bash
 # Option 1: Project-specific location (recommended for development)
@@ -206,7 +210,7 @@ That's more like it. We can see the actual instructions the JIT generated: loads
 
 ## What About Intel Macs?
 
-Intel Macs are increasingly rare, but if you're still on one, the process is nearly identical with different architecture flags:
+For completeness, the same approach applies to Intel Macs with different architecture flags:
 
 ```bash
 clang -dynamiclib \
@@ -240,7 +244,7 @@ The JVM can't find the library. Fix it by either:
 The library is loaded but not working. Check:
 - Architecture matches your JVM (`arm64` vs `x86_64`)
 - Capstone library is accessible at runtime (not just headers)
-- Try running with `-Xlog:os+container` to see loading details
+- Try running with `-Xlog:os+dll` to see library loading details
 
 ### Build fails with "capstone.h not found"
 
@@ -256,25 +260,24 @@ The Capstone library isn't being linked. Make sure:
 - `-L` points to the directory containing `libcapstone.dylib`
 - `-lcapstone` is present in the command
 
-## Why Not Just Use the Official Build?
+## Why Direct Compilation?
 
-The OpenJDK build system (`configure && make build-hsdis`) is comprehensive. It's designed to build the *entire JDK*. On macOS, this means requiring:
+The OpenJDK build system (`configure && make build-hsdis`) is designed to build the *entire JDK*, not just the hsdis plugin. On macOS, this means requiring:
 
 - Full Xcode installation (not just Command Line Tools)
 - Metal shader compiler (`metal`, `metallib`)
 - Autoconf and various other tools
-- Patience
 
-For a ~50KB shared library with one source file, this is overkill. The manual compilation approach:
+For a ~50KB shared library with one source file, this is unnecessary complexity. Direct compilation against Capstone:
 
-- Compiles in seconds rather than requiring hours of setup
+- Produces an equivalent binary that satisfies the JVM's contract
 - Works with just Command Line Tools
-- Produces an equivalent functional binary
-- Actually works on Apple Silicon without Metal workarounds
+- Avoids Metal and other macOS-specific build requirements
+- Demonstrates how little the JVM actually requires
 
-## What Can We Do With This?
+## JIT Observability in Practice
 
-Once hsdis is installed, JMH's `perfasm` profiler becomes available. Let's see what it gives us:
+With the disassembly plugin in place, the JVM's machine code output becomes actionable. JMH's `perfasm` profiler can now correlate CPU samples with the actual instructions executed:
 
 ```bash
 java -jar benchmarks.jar -prof perfasm MyBenchmark
@@ -295,20 +298,22 @@ c2, level 4, com.example.MyBenchmark::hotLoop, version 2, compile id 1042
            ╰      0x00000001082d4aa0:   b.lt    0x1082d4a90         ; loop back
 ```
 
-Now we're getting somewhere. The percentages on the left show where cycles are spent. This loop is spending ~35% on the load, ~29% on the add, and ~31% on the loop comparison. The bounds check (`b.hs`) is outside the hot path: the JIT hoisted it.
+Now we're getting somewhere. The percentages on the left show where cycles are spent. This loop is spending ~35% on the load, ~29% on the add, and ~31% on the loop comparison. The bounds check (`b.hs`) is outside the hot path, meaning the JIT hoisted it.
 
-Combined with async-profiler's flamegraphs, you have everything you need to understand what the JVM is actually doing with your code.
+This is the observability that hsdis enables: seeing not just *that* the JIT optimized your code, but *how*. Combined with async-profiler's flamegraphs, you have the tools to understand what the JVM is actually doing with your code.
 
 ## Conclusion
 
-Building hsdis on macOS Apple Silicon doesn't have to be a multi-hour ordeal. By understanding what hsdis actually is (a small shim that calls Capstone) we can compile it directly and skip the OpenJDK build system entirely.
+The JVM's `PrintAssembly` capability exposes the JIT's actual output, but requires a disassembly plugin to be useful. Understanding what the JVM expects from hsdis reveals that it can be compiled directly against Capstone, bypassing the complexity of the full OpenJDK build.
 
-Now go see what your JIT is really doing with that hot loop.
+The result is JIT observability: the ability to see the actual machine code the JIT produced, not just profiler hotspots. For serious performance work, this level of visibility is often the difference between speculation and understanding.
 
-## Quick Reference
+## Appendix: Quick Reference
+
+For convenience, here is the complete sequence as a single command:
 
 ```bash
-# Complete one-liner for Apple Silicon (M1/M2/M3/M4)
+# One-liner for Apple Silicon (M1/M2/M3/M4)
 brew install capstone && \
 git clone --depth 1 --branch jdk-21+35 https://github.com/openjdk/jdk.git /tmp/jdk && \
 clang -dynamiclib -arch arm64 \
