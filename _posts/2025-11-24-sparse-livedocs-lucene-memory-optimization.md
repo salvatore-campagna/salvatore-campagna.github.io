@@ -60,18 +60,22 @@ The optimization comes from a simple observation: **most segments have very few 
 
 In practice, deletion rates are typically well under 1%. Documents get updated, old content expires, duplicates get removed. You're rarely deleting a large fraction of your index at once.
 
-What if we stored only the deleted document IDs instead of a bit for every document? (Why deleted and not live? Because at low deletion rates, there are far fewer deleted IDs to store.) Let's work out the math:
+What if we stored only the deleted document IDs instead of a bit for every document? (Why deleted and not live? Because at low deletion rates, there are far fewer deleted IDs to store.)
+
+If we used a simple array of 32-bit document IDs, the math would work out like this:
 
 ```
 Dense (current):  maxDoc / 8 bytes
-Sparse (proposed): deletedCount * 4 bytes  (assuming 32-bit doc IDs)
+Sparse (naive):   deletedCount * 4 bytes  (32-bit doc IDs)
 
 Crossover point: maxDoc/8 = deletedCount * 4
                  deletedCount = maxDoc/32
                  deletionRate = 1/32 ≈ 3.125%
 ```
 
-So in theory, sparse wins for anything under ~3% deletions. In practice, we'll use a more conservative 1% threshold to account for overhead and ensure consistent wins.
+So even with a naive approach, sparse wins for anything under ~3% deletions. But we can do better than a flat array. The actual implementation uses `SparseFixedBitSet`, which divides the bit space into 4096-bit blocks and only allocates memory for blocks containing set bits. This is significantly more efficient than storing raw doc IDs, especially when deletions cluster together (which they often do in time-series data or batch updates).
+
+In practice, we use a conservative 1% threshold to ensure consistent wins across different deletion patterns.
 
 ## How Does the Implementation Work?
 
@@ -79,7 +83,7 @@ The fix introduces two implementations behind a common `LiveDocs` interface:
 
 | Implementation | When Used | Storage |
 |----------------|-----------|---------|
-| **SparseLiveDocs** | ≤1% deletions | Array of deleted doc IDs |
+| **SparseLiveDocs** | ≤1% deletions | `SparseFixedBitSet` of deleted doc IDs |
 | **DenseLiveDocs** | >1% deletions | Traditional `FixedBitSet` |
 
 As segments accumulate deletions over time, the format reader automatically selects the right implementation based on deletion density when loading a segment. No configuration needed.
