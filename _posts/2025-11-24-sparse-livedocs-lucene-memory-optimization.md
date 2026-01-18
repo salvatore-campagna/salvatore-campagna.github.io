@@ -17,7 +17,7 @@ When a segment has deletions, Lucene allocates one bit per document for LiveDocs
 
 **Two wins:**
 - **Memory**: Up to 40x reduction for segments with few deletions
-- **Iteration**: Up to 30x faster when iterating deleted documents (enables aggregation corrections)
+- **Iteration**: Up to 30x faster when iterating deleted documents
 
 ## How Much Memory Does LiveDocs Actually Use?
 
@@ -47,7 +47,7 @@ When does LiveDocs exist? Only when a segment has deletions. A freshly written s
 Where does LiveDocs get checked?
 
 - **Search**: Effectively every query filters through LiveDocs. If the bit is 0, the document is skipped.
-- **Merge**: This is when deleted documents are physically removed. The merge process iterates LiveDocs to decide which documents to copy to the new segment.
+- **Merge**: This is when deleted documents are physically removed. The merge process iterates LiveDocs to decide which documents to copy to the new segment.[^soft-deletes]
 - **Aggregations**: Facet counts and statistics need to exclude deleted documents (more on this later).
 
 Why "two-phase deletion"? The deleted document's data (stored fields, doc values) remains in the segment until a merge removes it. Mark now, reclaim space later.
@@ -305,3 +305,5 @@ The change ships in a future Lucene release. Your segments will get faster and l
 - [SparseFixedBitSet](https://lucene.apache.org/core/5_2_1/core/org/apache/lucene/util/SparseFixedBitSet.html): Block-sparse bitset used for low-deletion segments
 - [FixedBitSet](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/util/FixedBitSet.html): Dense bitset used for high-deletion segments
 - [Lucene Codec Documentation](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/codecs/package-summary.html): How Lucene stores segment metadata
+
+[^soft-deletes]: This applies to *hard* deletes. Lucene also supports [*soft* deletes](https://lucene.apache.org/core/8_0_0/core/org/apache/lucene/index/SoftDeletesRetentionMergePolicy.html), which are tracked via a DocValues field rather than LiveDocs. Soft-deleted documents may survive merges depending on the configured [`SoftDeletesRetentionMergePolicy`](https://lucene.apache.org/core/8_0_0/core/org/apache/lucene/index/SoftDeletesRetentionMergePolicy.html) and retention query. Elasticsearch uses soft deletes for [operations history](https://github.com/elastic/elasticsearch/issues/29530) and cross-cluster replication.
