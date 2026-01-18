@@ -13,7 +13,7 @@ image:
 
 The JVM can show you the actual machine code the JIT generates, but this requires hsdis, a small disassembler plugin that is not bundled by default.
 
-This post shows how to make HotSpot's JIT-generated machine code observable on Apple Silicon by satisfying the JVM's minimal hsdis plugin contract directly, enabling low-level JVM performance analysis and tools like JMH's perfasm profiler without relying on the full OpenJDK build system.
+This post shows how to make HotSpot's JIT-generated machine code observable on Apple Silicon by satisfying the JVM's minimal hsdis plugin contract directly. This enables low-level JVM performance analysis and tools like JMH's perfasm profiler without relying on the full OpenJDK build system.
 
 ## The JVM's Hidden Output
 
@@ -59,7 +59,7 @@ This is essential for serious performance work, especially when benchmarking wit
 
 ## The JVM's Plugin Contract
 
-The JVM's requirements for hsdis are simple: a shared library that exports `decode_instructions_virtual` and is discoverable via `$JAVA_HOME/lib/server/` or the dynamic library path. That's the entire contract, and it applies to any platform where HotSpot runs. The complexity comes from the official build system, not from what the JVM actually needs.
+The JVM's requirements for hsdis are simple: a shared library that exports `decode_instructions_virtual` and is discoverable via `$JAVA_HOME/lib/server/` or `java.library.path`. That's the entire contract, and it applies to any platform where HotSpot runs. The complexity comes from the official build system, not from what HotSpot actually expects.
 
 Building hsdis on Apple Silicon through the standard OpenJDK build presents challenges:
 
@@ -244,7 +244,7 @@ The JVM can't find the library. Fix it by either:
 The library is loaded but not working. Check:
 - Architecture matches your JVM (`arm64` vs `x86_64`)
 - Capstone library is accessible at runtime (not just headers)
-- Try running with `-Xlog:os+dll` to see library loading details
+- The flag `-Xlog:os+dll` can reveal library loading details
 
 ### Build fails with "capstone.h not found"
 
