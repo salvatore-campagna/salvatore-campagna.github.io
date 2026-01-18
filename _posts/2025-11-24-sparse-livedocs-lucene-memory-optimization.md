@@ -81,7 +81,7 @@ But the `int[]` model is a conservative baseline. The real implementation uses [
 - Divides the bit space into 4096-bit blocks (64 longs per block)
 - Only materializes blocks that contain at least one set bit
 - Within each block, only stores the non-zero longs
-- Deletions that cluster together (common in time-series or batch updates) share blocks, further reducing overhead
+- Deletions that cluster together share blocks, further reducing overhead
 
 See [the implementation](https://github.com/apache/lucene/pull/15413) for the full details.
 
