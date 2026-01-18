@@ -75,7 +75,7 @@ Crossover point: maxDoc/8 = deletedCount * 4
 
 So even with this naive approach, sparse wins for anything under ~3% deletions.
 
-The real implementation does better: it uses [`SparseFixedBitSet`](https://lucene.apache.org/core/5_2_1/core/org/apache/lucene/util/SparseFixedBitSet.html) (a block-based sparse bitset) rather than a plain `int[]`. This keeps random-access fast while avoiding allocation for mostly-zero regions.
+But the `int[]` model is a conservative baseline. The real implementation uses [`SparseFixedBitSet`](https://lucene.apache.org/core/5_2_1/core/org/apache/lucene/util/SparseFixedBitSet.html), a block-based sparse bitset that is more space-efficient than a plain array of document IDs. Because `SparseFixedBitSet` uses less memory than the baseline model predicts, the true crossover point—where sparse and dense use equal memory—is likely higher than 3%. The 1% threshold used in practice is a deliberately conservative design choice, ensuring consistent wins across all deletion patterns without risking regressions in adversarial cases.
 
 **How `SparseFixedBitSet` stays small:**
 - Divides the bit space into 4096-bit blocks (64 longs per block)
@@ -83,7 +83,7 @@ The real implementation does better: it uses [`SparseFixedBitSet`](https://lucen
 - Within each block, only stores the non-zero longs
 - Deletions that cluster together (common in time-series or batch updates) share blocks, further reducing overhead
 
-In practice, [the implementation](https://github.com/apache/lucene/pull/15413) uses a conservative 1% threshold to ensure consistent wins across different deletion patterns.
+See [the implementation](https://github.com/apache/lucene/pull/15413) for the full details.
 
 ## How Does the Implementation Work?
 
