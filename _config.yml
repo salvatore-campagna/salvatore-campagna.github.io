@@ -28,7 +28,7 @@ social:
 # Analytics (optional) - add your Google Analytics ID
 analytics:
   google:
-    id: "G-YLFP93KD5X"
+    id: G-YLFP93KD5X
 
 # Comments - using Giscus (GitHub Discussions)
 # To set up: visit https://giscus.app/ and fill in your repo details
