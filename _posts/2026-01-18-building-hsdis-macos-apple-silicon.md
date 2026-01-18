@@ -1,8 +1,8 @@
 ---
-title: "Seeing the JIT: Building hsdis on Apple Silicon Without the OpenJDK Build System"
-description: "How to compile the HotSpot Disassembler plugin for JVM performance analysis on M1/M2/M3/M4 Macs, without fighting the OpenJDK build system."
+title: "Seeing the JIT: Making Java's Machine Code Visible on Apple Silicon"
+description: "Making HotSpot's JIT-generated machine code observable on Apple Silicon for low-level JVM performance analysis, using hsdis and Capstone."
 date: 2026-01-18
-categories: [Tooling, Performance]
+categories: [Internals, Performance]
 tags: [jvm, hsdis, macos, apple-silicon, profiling, assembly]
 image:
   path: /assets/images/hsdis-header.jpg
@@ -11,7 +11,9 @@ image:
 
 ## TL;DR
 
-Can't see JIT assembly on your Mac? Install Capstone (`brew install capstone`), clone OpenJDK, and compile hsdis with a single direct `clang` invocation. Skip the painful OpenJDK build system entirely. Full one-liner at the [bottom](#quick-reference).
+The JVM can show you the actual machine code the JIT generates, but this requires hsdis, a small disassembler plugin that is not bundled by default.
+
+This post shows how to make HotSpot's JIT-generated machine code observable on Apple Silicon, enabling low-level JVM performance analysis and tools like JMH's perfasm profiler, without relying on the full OpenJDK build system.
 
 ## What Happens When You Ask the JVM for Assembly?
 
@@ -325,4 +327,5 @@ sudo cp hsdis-aarch64.dylib $JAVA_HOME/lib/server/
 - [Capstone Engine](https://www.capstone-engine.org/): Multi-architecture disassembly framework
 - [HotSpot PrintAssembly Wiki](https://wiki.openjdk.org/display/HotSpot/PrintAssembly): Official documentation
 - [JMH Profilers](https://github.com/openjdk/jmh/blob/master/jmh-core/src/main/java/org/openjdk/jmh/profile/): Using hsdis with JMH benchmarks
+- [JITWatch](https://github.com/AdoptOpenJDK/jitwatch): Log analyzer and visualizer for HotSpot JIT compilation
 - [Nitsan Wakart's Blog](https://psy-lob-saw.blogspot.com/): Deep dives into JVM performance and assembly analysis
