@@ -29,7 +29,13 @@ My obsession with testability actually comes from electronics and VLSI, where De
 
 Then payments at Adyen, where I built the second version of their Intelligent Payment Router. Different domain, same obsession: making the right decision, fast, at scale, and being able to prove it works.
 
+![Amsterdam, Netherlands](/assets/images/jonne-makikyro-knbve9xxH4U-unsplash.jpg){: .rounded-10 }
+_Amsterdam. Where I learned that correctness at scale is a systems problem, not a testing problem. Photo by [Jonne Mäkikyrö](https://unsplash.com/@jonne_makikyro) on Unsplash._
+
 A stint at King taught me what "high throughput" really means when millions of people are playing games simultaneously.
+
+![Barcelona, Spain](/assets/images/dorian-d1-aX5NLrKgRBc-unsplash.jpg){: .rounded-10 }
+_Barcelona. Where "millions of concurrent users" stopped being an abstraction. Photo by [Dorian Mongel](https://unsplash.com/@dorian_d1) on Unsplash._
 
 Eventually I found my way to Lucene and Elasticsearch, and something clicked. Search and storage sit at this intersection of computer science fundamentals and practical engineering that I find endlessly interesting. You need to understand data structures, compression theory, and distributed systems, but you also need to ship code that works in production. Theory that survives contact with reality.
 
