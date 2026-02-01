@@ -138,6 +138,109 @@ blog/
 └── README.md            # This file
 ```
 
+## Enabling Comments with Giscus
+
+This blog uses [Giscus](https://giscus.app/) for comments. Giscus is a lightweight, open-source commenting system that stores all comments as **GitHub Discussions** on your repository — no external database or third-party account needed. Readers comment using their GitHub account, and every comment thread is visible both on the blog and in the repository's Discussions tab.
+
+### Prerequisites
+
+- A **public** GitHub repository (Giscus cannot access private repos)
+- GitHub Discussions enabled on the repository
+- The [Giscus GitHub App](https://github.com/apps/giscus) installed on the repository
+
+### Setup Steps
+
+#### Step 1: Enable GitHub Discussions
+
+1. Go to your repository on GitHub: [salvatore-campagna/salvatore-campagna.github.io](https://github.com/salvatore-campagna/salvatore-campagna.github.io)
+2. Click **Settings** → **General**
+3. Scroll down to the **Features** section
+4. Check the **Discussions** checkbox and save
+
+> This can also be done via the GitHub CLI:
+> ```bash
+> gh api repos/salvatore-campagna/salvatore-campagna.github.io -X PATCH -f has_discussions=true
+> ```
+
+#### Step 2: Install the Giscus GitHub App
+
+1. Visit [https://github.com/apps/giscus](https://github.com/apps/giscus)
+2. Click **Install**
+3. Choose **Only select repositories** and pick `salvatore-campagna.github.io`
+4. Click **Install**
+
+This grants Giscus permission to read and create Discussions on your repo. It does **not** get access to your code.
+
+#### Step 3: Get your `repo_id` and `category_id`
+
+If you ever need to reconfigure these values:
+
+1. Visit [https://giscus.app/](https://giscus.app/)
+2. In the **Repository** field, enter: `salvatore-campagna/salvatore-campagna.github.io`
+3. Under **Discussion Category**, select **Announcements**
+4. Scroll down to the generated `<script>` tag and copy the values of:
+   - `data-repo-id` → this is your `repo_id`
+   - `data-category-id` → this is your `category_id`
+
+> You can also retrieve these via the GitHub GraphQL API:
+> ```bash
+> gh api graphql -f query='{
+>   repository(owner: "salvatore-campagna", name: "salvatore-campagna.github.io") {
+>     id
+>     discussionCategories(first: 10) {
+>       nodes { id name }
+>     }
+>   }
+> }'
+> ```
+
+#### Step 4: Update `_config.yml`
+
+The giscus section in `_config.yml` should look like this (already configured):
+
+```yaml
+comments:
+  provider: giscus
+  giscus:
+    repo: salvatore-campagna/salvatore-campagna.github.io
+    repo_id: R_kgDOQ8OMWw
+    category: Announcements
+    category_id: DIC_kwDOQ8OMW84C1ux9
+    mapping: pathname
+    strict: 0
+    input_position: bottom
+    lang: en
+    reactions_enabled: 1
+```
+
+| Setting | Purpose |
+|---------|---------|
+| `mapping: pathname` | Each post's URL path maps to a unique Discussion thread |
+| `strict: 0` | Allows fuzzy matching of pathnames (tolerates trailing slashes, etc.) |
+| `input_position: bottom` | Comment box appears below existing comments |
+| `reactions_enabled: 1` | Enables emoji reactions on the main post |
+
+#### Step 5: Verify post defaults
+
+Posts must have `comments: true` in their front matter. This is already set globally in the defaults section of `_config.yml`, so all posts get comments automatically. To disable comments on a specific post, add `comments: false` to that post's front matter.
+
+### How It Works
+
+- When a reader opens a blog post, the Giscus widget loads in an `<iframe>`
+- On first comment, Giscus automatically creates a Discussion in the **Announcements** category
+- The Discussion title matches the post's URL pathname
+- All subsequent comments on that post appear in the same Discussion
+- Comments are visible both on the blog and in the repo's [Discussions tab](https://github.com/salvatore-campagna/salvatore-campagna.github.io/discussions)
+
+### Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Comment widget doesn't appear | Verify the Giscus app is installed and the repo is public |
+| "Discussion not found" error | Check that `repo_id` and `category_id` are correct |
+| Comments disabled on a post | Check the post's front matter for `comments: false` |
+| Widget loads but can't create discussions | Ensure the Announcements category exists in Discussions |
+
 ## Resources
 
 - [Minimal Mistakes Documentation](https://mmistakes.github.io/minimal-mistakes/docs/quick-start-guide/)
