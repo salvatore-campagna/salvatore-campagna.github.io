@@ -18,14 +18,6 @@ permalink: /404-gc.html
     border: 1px solid var(--card-border-color, #333);
     min-height: 320px;
   }
-  .gc-log .timestamp { color: #888; }
-  .gc-log .info { color: #61afef; }
-  .gc-log .warn { color: #e5c07b; }
-  .gc-log .error { color: #e06c75; }
-  .gc-log .success { color: #98c379; }
-  .gc-log .gc-tag { color: #c678dd; font-weight: bold; }
-  .gc-log .metric { color: #d19a66; }
-  .gc-log .dim { color: #555; }
   .gc-log .line {
     opacity: 0;
     animation: fadeIn 0.3s ease forwards;
@@ -78,72 +70,4 @@ permalink: /404-gc.html
 </div>
 </div>
 
-<script>
-(function() {
-  var now = new Date();
-  var ts = now.toISOString().replace('T', ' ').substring(0, 23);
-  var path = window.location.pathname;
-
-  var lines = [
-    { delay: 0, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[JVM]</span> Using OpenJDK 21.0.2+13 with G1 Garbage Collector' },
-    { delay: 400, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[heap]</span> Initial heap: <span class="metric">256M</span> | Max heap: <span class="metric">4096M</span> | Used: <span class="metric">1847M</span>' },
-    { delay: 800, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[blog]</span> Resolving path: <span class="warn">' + path + '</span>' },
-    { delay: 1400, html: '<span class="timestamp">[' + ts + ']</span> <span class="warn">[warn ]</span> <span class="gc-tag">[blog]</span> PageCache.lookup() returned <span class="error">null</span> for <span class="warn">' + path + '</span>' },
-    { delay: 1900, html: '<span class="timestamp">[' + ts + ']</span> <span class="warn">[warn ]</span> <span class="gc-tag">[blog]</span> ContentResolver.loadPage() — file not found on disk' },
-    { delay: 2500, html: '<span class="timestamp">[' + ts + ']</span> <span class="error">[error]</span> <span class="gc-tag">[blog]</span> Page object unreachable. Marking for collection.' },
-    { delay: 3200, html: '' },
-    { delay: 3400, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span> Pause Young (Normal) (Page Not Found)' },
-    { delay: 3900, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span>   ParNew: <span class="metric">1847M</span>-><span class="metric">1203M</span>(<span class="metric">2048M</span>)' },
-    { delay: 4300, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span>   Heap: <span class="metric">3012M</span>-><span class="metric">2368M</span>(<span class="metric">4096M</span>)' },
-    { delay: 4700, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span>   Collected: <span class="error">1 dead page object</span> (<span class="metric">644M</span> reclaimed)' },
-    { delay: 5200, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span>   Pause: <span class="metric">4.04ms</span>' },
-    { delay: 5700, html: '' },
-    { delay: 5900, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span> Concurrent Mark — scanning live objects...' },
-    { delay: 6500, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span>   Live roots found: <span class="success">HomePageBean</span>, <span class="success">ArchiveIndex</span>, <span class="success">TagRegistry</span>, <span class="success">CategoryMapper</span>, <span class="success">AuthorProfile</span>' },
-    { delay: 7200, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span>   Dead objects: <span class="error">' + path + '</span> <span class="dim">(softly reachable, finalized)</span>' },
-    { delay: 7800, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span> Concurrent Mark — <span class="metric">2.87ms</span>' },
-    { delay: 8400, html: '' },
-    { delay: 8600, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span> Pause Remark — <span class="metric">0.42ms</span>' },
-    { delay: 9000, html: '<span class="timestamp">[' + ts + ']</span> <span class="info">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span> Concurrent Cleanup — <span class="metric">0.18ms</span>' },
-    { delay: 9500, html: '' },
-    { delay: 9700, html: '<span class="timestamp">[' + ts + ']</span> <span class="success">[info ]</span> <span class="gc-tag">[gc  ]</span> <span class="gc-tag">GC(404)</span> <span class="success">Collection complete.</span> Page successfully garbage collected.' },
-    { delay: 10300, html: '<span class="timestamp">[' + ts + ']</span> <span class="success">[info ]</span> <span class="gc-tag">[heap]</span> Heap after GC: <span class="metric">2368M</span> used / <span class="metric">4096M</span> committed / <span class="metric">0 dead pages</span>' },
-  ];
-
-  var output = document.getElementById('gc-output');
-  var nav = document.getElementById('gc-nav');
-
-  lines.forEach(function(line, i) {
-    setTimeout(function() {
-      var div = document.createElement('div');
-      div.className = 'line';
-      div.style.animationDelay = '0s';
-      if (line.html === '') {
-        div.innerHTML = '&nbsp;';
-      } else {
-        div.innerHTML = line.html;
-      }
-      // Remove cursor from previous line
-      var prev = output.querySelector('.cursor');
-      if (prev) prev.remove();
-      // Add cursor to this line
-      if (line.html !== '') {
-        var cursor = document.createElement('span');
-        cursor.className = 'cursor';
-        div.appendChild(cursor);
-      }
-      output.appendChild(div);
-      output.scrollTop = output.scrollHeight;
-
-      // Show nav after last line
-      if (i === lines.length - 1) {
-        setTimeout(function() {
-          var c = output.querySelector('.cursor');
-          if (c) c.remove();
-          nav.style.display = 'block';
-        }, 800);
-      }
-    }, line.delay);
-  });
-})();
-</script>
+<script src="/assets/js/404-gc.js"></script>
