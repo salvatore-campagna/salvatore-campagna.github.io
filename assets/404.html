@@ -12,15 +12,27 @@ redirect_from:
 {% include lang.html %}
 
 <div class="content">
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Exception in thread "browser" PageNotFoundException:
-    The requested resource could not be located.
-
-    at blog.Router.resolve(Router.java:404)
-    at blog.Servlet.doGet(Servlet.java:42)
-    at javax.servlet.http.HttpServlet.service(HttpServlet.java:750)
-
-Caused by: java.io.FileNotFoundException: /posts/you-were-looking-for
-    ... 42 more
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">Exception</span> in thread <span class="s">"browser-main"</span> io.github.blog.<span class="nc">PageNotFoundException</span>: <span class="mi">404</span> - The requested resource could not be located
+    at io.github.blog.router.<span class="nc">RequestDispatcher</span>.resolve(<span class="nc">RequestDispatcher</span>.java:<span class="mi">404</span>)
+    at io.github.blog.router.<span class="nc">RequestDispatcher</span>.forward(<span class="nc">RequestDispatcher</span>.java:<span class="mi">389</span>)
+    at io.github.blog.servlet.<span class="nc">BlogServlet</span>.doGet(<span class="nc">BlogServlet</span>.java:<span class="mi">142</span>)
+    at javax.servlet.http.<span class="nc">HttpServlet</span>.service(<span class="nc">HttpServlet</span>.java:<span class="mi">750</span>)
+    at javax.servlet.http.<span class="nc">HttpServlet</span>.service(<span class="nc">HttpServlet</span>.java:<span class="mi">847</span>)
+    at org.eclipse.jetty.servlet.<span class="nc">ServletHolder</span>.handle(<span class="nc">ServletHolder</span>.java:<span class="mi">799</span>)
+    at org.eclipse.jetty.servlet.<span class="nc">ServletHandler</span>.doHandle(<span class="nc">ServletHandler</span>.java:<span class="mi">550</span>)
+    at org.eclipse.jetty.server.handler.<span class="nc">ScopedHandler</span>.nextHandle(<span class="nc">ScopedHandler</span>.java:<span class="mi">233</span>)
+    at org.eclipse.jetty.server.handler.<span class="nc">ContextHandler</span>.doHandle(<span class="nc">ContextHandler</span>.java:<span class="mi">1440</span>)
+    at org.eclipse.jetty.server.<span class="nc">Server</span>.handle(<span class="nc">Server</span>.java:<span class="mi">524</span>)
+    at org.eclipse.jetty.server.<span class="nc">HttpChannel</span>.lambda$handle$<span class="mi">1</span>(<span class="nc">HttpChannel</span>.java:<span class="mi">404</span>)
+    at org.eclipse.jetty.server.<span class="nc">HttpChannel</span>.dispatch(<span class="nc">HttpChannel</span>.java:<span class="mi">633</span>)
+    ... <span class="mi">24</span> more
+<span class="nc">Caused</span> by: java.io.<span class="nc">FileNotFoundException</span>: /posts/the-page-you-were-looking-for (No such file or directory)
+    at java.base/java.io.<span class="nc">FileInputStream</span>.open0(<span class="nc">Native</span> <span class="nc">Method</span>)
+    at java.base/java.io.<span class="nc">FileInputStream</span>.open(<span class="nc">FileInputStream</span>.java:<span class="mi">216</span>)
+    at java.base/java.io.<span class="nc">FileInputStream</span>.&lt;init&gt;(<span class="nc">FileInputStream</span>.java:<span class="mi">157</span>)
+    at io.github.blog.content.<span class="nc">ContentResolver</span>.loadPage(<span class="nc">ContentResolver</span>.java:<span class="mi">87</span>)
+    at io.github.blog.router.<span class="nc">RequestDispatcher</span>.resolve(<span class="nc">RequestDispatcher</span>.java:<span class="mi">401</span>)
+    ... <span class="mi">35</span> more
 </code></pre></div></div>
 
 <p><strong>The page you're looking for doesn't exist.</strong></p>
