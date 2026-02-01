@@ -40,15 +40,7 @@ Lucene's answer is simpler: segments are immutable. That immutability is what ma
 > Segment immutability is a foundational design choice in Lucene. It eliminates the need for read locks, enables safe concurrent access from multiple threads, and simplifies crash recovery. `LiveDocs` exists because of this choice: you can't modify a segment, so you mark deletions separately.
 {: .prompt-tip }
 
-When does `LiveDocs` exist? Only when a segment has deletions. A freshly written segment has no `.liv` file at all, and every document is implicitly live.
-
-Where does `LiveDocs` get checked?
-
-- **Search**: Effectively every query filters through `LiveDocs`. If the bit is 0, the document is skipped.
-- **Merge**: This is when hard-deleted documents are physically removed. During a merge, Lucene consults `LiveDocs` to skip deleted documents when copying survivors into the new segment.[^soft-deletes]
-- **Aggregations**: Facet counts and statistics need to exclude deleted documents (more on this later).
-
-Why "two-phase deletion"? The deleted document's data (stored fields, doc values) remains in the segment until a merge removes it. Mark now, reclaim space later.
+`LiveDocs` only exists when a segment has deletions. A freshly written segment has no `.liv` file at all, and every document is implicitly live. Once deletions appear, `LiveDocs` shows up on almost every read path: queries filter through it to skip deleted hits, merges[^merges] consult it when copying survivors into new segments[^soft-deletes], and aggregations need it to keep facet counts and statistics accurate (more on this later). The deleted document's data remains in the segment until a merge physically removes it. Mark now, reclaim space later.
 
 In memory, `LiveDocs` is traditionally a `FixedBitSet`, which allocates one bit per document regardless of how many are deleted. That's the waste we're addressing.
 
@@ -59,9 +51,7 @@ The optimization comes from a simple observation: **most segments have very few 
 > In append-heavy workloads, segments often reach tens of millions of documents with deletion rates well under 1%. When your data structure is 99.9% ones, you're paying for generality you don't need.
 {: .prompt-tip }
 
-In practice, deletion rates are typically well under 1%. Documents get updated, old content expires, duplicates get removed. You're rarely deleting a large fraction of your index at once.
-
-What if we stored only the deleted document IDs instead of a bit for every document?
+In practice, deletion rates are typically well under 1%. Documents get updated, old content expires, duplicates get removed. You're rarely deleting a large fraction of your index at once. But if that's the case, what if we stored only the deleted document IDs instead of a bit for every document?
 
 As a baseline, imagine we stored deleted document IDs in a simple 32-bit int array:
 
@@ -131,14 +121,7 @@ The 1% threshold provides a comfortable margin. We're guaranteed at least 3x mem
 
 ### What About JVM Overhead?
 
-The math above is simplified. In reality, both representations have overhead:
-
-- **Dense**: `FixedBitSet` has object headers (about 16 bytes) and the backing `long[]` has its own header and potential padding
-- **Sparse**: The `SparseFixedBitSet` has its own object and block-array overhead
-
-Including JVM object headers and alignment, the actual crossover point shifts slightly, but the 1% threshold remains safe.[^naive-model]
-
-The benchmarks use `ramBytesUsed()`, which estimates memory including object headers and array sizes but doesn't capture every JVM detail like alignment padding or compressed oops variations. The reported savings are close to real-world usage, though actual footprint may differ slightly depending on JVM configuration.
+The math above is simplified. In reality, both `FixedBitSet` and `SparseFixedBitSet` carry JVM object headers, array overhead, and potential alignment padding. Including these, the actual crossover point shifts slightly, but the 1% threshold remains safe.[^naive-model] The benchmarks use `ramBytesUsed()`, which accounts for object headers and array sizes but doesn't capture every JVM detail. The reported savings are close to real-world usage, though actual footprint may differ slightly depending on JVM configuration.
 
 ### What Happens When Deletes Occur After a Segment Is Loaded?
 
@@ -183,7 +166,7 @@ This might seem like an obscure capability, but it unlocks a powerful optimizati
 3. Subtract their contributions from the result
 ```
 
-This flips the complexity from O(maxDoc) to O(deletedDocs). For that 10 million document segment with 0.1% deletions, you go from 10 million operations to 10,000.
+This flips the complexity from `O(maxDoc)` to `O(deletedDocs)`. For that 10 million document segment with 0.1% deletions, you go from 10 million operations to 10,000.
 
 But here's the catch: step 2 requires iterating over deleted documents efficiently. With a dense `FixedBitSet`, you'd scan all 10 million bits looking for zeros, which defeats the purpose. With `SparseLiveDocs`, you iterate only the 10,000 deleted documents.
 
@@ -200,12 +183,12 @@ if (deletedDocs.cost() < maxDoc / 4) {
 
 Why not just throw an exception when dense iteration would be slow? Because slow and correct beats surprising. Both implementations honor the full `LiveDocs` interface, and `cost()` is already how Lucene handles this everywhere: query planning, intersection strategies, scorer selection. Callers check cost, pick a strategy, move on. No type-checking, no try-catch. You don't need to know which implementation you're talking to.
 
-> `cost()` itself is O(1), both `SparseLiveDocs` and `DenseLiveDocs` precompute it at construction time. The decision of which strategy to use adds no overhead to the query path.
+> `cost()` itself is `O(1)`, both `SparseLiveDocs` and `DenseLiveDocs` precompute it at construction time. The decision of which strategy to use adds no overhead to the query path.
 {: .prompt-tip }
 
 This pattern is particularly valuable for histogram corrections in numeric aggregations, facet count adjustments in search results, and additive statistics like sum, count, and average.
 
-**Where this doesn't apply**: The "compute then correct" pattern requires the aggregation to be reversible. Percentiles, cardinality estimates, scripted aggregations, and operations with document-level side effects can't use this approach. For those, you still need to filter deleted documents during the main pass.
+**Where this doesn't apply**: The "compute then correct" pattern requires the aggregation to be reversible. For example, you can subtract a deleted document's value from a sum, but you can't "un-insert" it from a HyperLogLog cardinality estimate or remove its influence on a percentile sketch. Percentiles, cardinality estimates, and scripted aggregations can't use this approach. For those, you still need to filter deleted documents during the main pass.
 
 The related work on [sparse `LiveDocs` for deletions](https://github.com/apache/lucene/issues/13084) and [efficient iteration over deleted doc values](https://github.com/apache/lucene/issues/15226) explores these aggregation optimizations in detail.
 
@@ -227,33 +210,30 @@ public class LiveDocsBenchmark {
 }
 ```
 
-Three segment sizes, six deletion rates, three deletion patterns: 54 combinations total. The results focus on two things: memory footprint and deleted-document iteration speed. Memory is measured via `ramBytesUsed()`, which both implementations provide, and reported as a JMH auxiliary counter alongside timing results. Let's see what we found.
+Three segment sizes, six deletion rates, three deletion patterns: 54 combinations total. The results we focus on here are memory footprint, measured via `ramBytesUsed()` and reported as a JMH auxiliary counter alongside timing results. Let's see what we found.
 
-### Memory Reduction
+### How Much Memory Do We Save?
 
-For a 10 million document segment with random deletions, here's what the benchmarks show:
+For a 10 million document segment, here's what the benchmarks show:
 
-| Deletion Rate | Dense Memory | Sparse Memory | Reduction |
-|---------------|--------------|---------------|-----------|
-| 0.1% | ~1.2MB | ~160KB | **~7.6x** |
-| 1.0% | ~1.2MB | ~800KB | **~1.6x** |
+| Deletion Rate | Pattern | Dense Memory | Sparse Memory | Reduction |
+|---------------|---------|--------------|---------------|-----------|
+| 0.1% | Random | ~1.2MB | ~160KB | **~7.6x** |
+| 0.1% | Clustered | ~1.2MB | ~30KB | **~40x** |
+| 1.0% | Random | ~1.2MB | ~800KB | **~1.6x** |
+| 1.0% | Clustered | ~1.2MB | ~42KB | **~29x** |
 
-*10 million document segment, random deletion pattern. Benchmarked up to 10M docs; larger segments are expected to scale proportionally.*
+*Benchmarked up to 10M docs; larger segments are expected to scale proportionally.*
 
-The memory savings are only part of the story. As discussed earlier, sparse storage also makes iterating deleted documents O(deletedDocs) rather than O(maxDoc), which is what enables the "compute then correct" pattern for aggregations.
+Clustered deletions are common in practice: time-based expiration removes consecutive documents, range deletes hit contiguous IDs. In these cases `SparseFixedBitSet` packs deleted IDs into shared blocks, which is why the reduction is so dramatic.
+
+The memory savings are only part of the story. As discussed earlier, sparse storage also makes iterating deleted documents `O(deletedDocs)` rather than `O(maxDoc)`, which is what enables the "compute then correct" pattern for aggregations.
 
 ### What's the Worst Case?
 
-What about adversarial scenarios? As an intentional stress test, I benchmarked maximally scattered deletions: the pattern most hostile to sparse storage.
+What about adversarial scenarios? As an intentional stress test, I benchmarked maximally scattered deletions at about 1.5%: above the 1% threshold, so we fall back to dense storage. The memory overhead is about 5.5% across segment sizes from 10M to 100M docs, coming entirely from the new wrapper objects. Even in this worst case, deleted-document iteration benefits from the refactored `FilteredDocIdSetIterator`, which applies to both representations.
 
-| Segment Size | Deletion Pattern | Memory Overhead |
-|--------------|------------------|-----------------|
-| 10 million docs | Scattered 1.5625% | ~5.5% |
-| 100 million docs | Scattered 1.5625% | ~5.5% |
-
-Above 1% deletions, we fall back to dense storage. The slight memory overhead (about 5.5%) comes from the new wrapper objects, not from sparse storage being used incorrectly. Even in this case, deleted-document iteration benefits from the refactored `FilteredDocIdSetIterator`, which applies to both representations.
-
-So there are actually two optimizations here: sparse storage for memory (when deletions are rare), and better iteration (always). Clustered deletions (common when you delete a range of documents) show even better results: up to **40x** memory reduction because deleted IDs pack tightly.
+So there are actually two optimizations here: sparse storage for memory (when deletions are rare), and better iteration (always).
 
 > This PR delivers two independent wins. Sparse storage reduces memory when deletions are rare. The refactored iteration using `FilteredDocIdSetIterator` speeds up deleted-document traversal for both sparse and dense representations. Even if your segments never qualify for sparse storage, you still get faster iteration.
 {: .prompt-tip }
@@ -266,7 +246,7 @@ Consider a typical large scale deployment with 1000 segments across shards, 10 m
 
 **After**: 1000 × about 500KB = around 500MB of `LiveDocs` memory
 
-That's hundreds of megabytes of heap freed up for more useful things like caching and buffers.
+That's hundreds of megabytes of heap freed up for more useful things: larger query caches, bigger I/O buffers, or simply fewer GC pauses from reduced heap pressure.
 
 ## Conclusion
 
@@ -276,14 +256,15 @@ The solution is simple: use sparse storage when deletions are rare, dense storag
 
 The optimization is purely in-memory. Segments still write the standard Lucene90 format, and the `Bits` interface continues working exactly as before.[^sparse-disk] Existing code that calls `liveDocs.get(docId)` sees no change. The new `LiveDocs` interface is opt-in for code that wants efficient deleted document iteration.
 
-[The PR](https://github.com/apache/lucene/pull/15413) includes parameterized benchmarks covering segment sizes from 100K to 100M documents, across random, clustered, and uniform deletion patterns, with dedicated pathological case testing. The benchmarks aren't just "proof it works." They're designed to catch regressions if someone modifies the implementation later. If you can't measure it, you can't trust it.
-
+Sometimes the best optimizations come from noticing what isn't there. A bitset that's 99.9% ones is barely a bitset at all.
 ## Resources
 
 - [Sparse LiveDocs PR](https://github.com/apache/lucene/pull/15413): The implementation with full discussion
 - [SparseFixedBitSet](https://lucene.apache.org/core/5_2_1/core/org/apache/lucene/util/SparseFixedBitSet.html): Block-sparse bitset used for low-deletion segments
 - [FixedBitSet](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/util/FixedBitSet.html): Dense bitset used for high-deletion segments
 - [Lucene Codec Documentation](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/codecs/package-summary.html): How Lucene stores segment metadata
+
+[^merges]: Lucene periodically combines multiple smaller segments into larger ones. This process, called [merging](https://lucene.apache.org/core/9_0_0/core/org/apache/lucene/index/MergePolicy.html), is when deleted documents are physically removed and disk space is reclaimed.
 
 [^sparse-disk]: A future codec version could write sparse deletions natively to disk, eliminating the dense-to-sparse conversion on load and reducing `.liv` file sizes for low-deletion segments. This would require a format change, so it was kept out of scope for this PR.
 
