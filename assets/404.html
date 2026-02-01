@@ -63,11 +63,10 @@ redirect_from:
 
   /* --- Variant: ASCII art --- */
   .ascii-art {
-    font-size: 0.9rem;
-    line-height: 1.3;
+    font-size: 0.65rem;
+    line-height: 1.2;
     color: #e06c75;
-    text-align: center;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.05em;
   }
 
   /* --- Shared nav --- */
@@ -153,6 +152,21 @@ redirect_from:
         <li><a href="/archives/">All Posts</a></li>
         <li><a href="/tags/">Tags</a></li>
         <li><a href="/about/">About</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Variant 5: Decompiled bytecode -->
+  <div class="variant" id="variant-bytecode">
+    <pre class="bytecode" id="bytecode-output"></pre>
+    <div class="four04-nav">
+      <p><strong>ATHROW</strong> &mdash; the page was never allocated. <span style="color:#555">(Refresh for a different 404.)</span></p>
+      <ul>
+        <li><a href="/">Home</a> &mdash; GOTO L0</li>
+        <li><a href="/archives/">All Posts</a> &mdash; INVOKEVIRTUAL</li>
+        <li><a href="/tags/">Tags</a> &mdash; LOOKUPSWITCH</li>
+        <li><a href="/categories/">Categories</a> &mdash; TABLESWITCH</li>
+        <li><a href="/about/">About</a> &mdash; GETFIELD</li>
       </ul>
     </div>
   </div>

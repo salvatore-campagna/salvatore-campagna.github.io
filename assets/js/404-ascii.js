@@ -3,20 +3,38 @@
   if (!output) return;
 
   var keywords = [
-    'null', 'void', 'throw', 'catch', 'class', 'final',
-    'static', 'public', 'import', 'return', 'try{}'
+    'null', 'void', 'throw', 'catch', 'class', 'final', 'try{}',
+    'static', 'public', 'import', 'return', 'break', 'super',
+    'synchronized', 'volatile', 'abstract', 'extends', 'implements',
+    'private', 'protected', 'interface', 'throws', 'finally'
   ];
 
   var art = [
-    '                                                  ',
-    '    ##  ##     ####     ##  ##                     ',
-    '    ##  ##    ##  ##    ##  ##                     ',
-    '    ##  ##   ##    ##   ##  ##                     ',
-    '    ######   ##    ##   ######                     ',
-    '        ##   ##    ##       ##                     ',
-    '        ##    ##  ##        ##                     ',
-    '        ##     ####         ##                     ',
-    '                                                  '
+    '                                                                                          ',
+    '   ##          ##      ######      ##          ##                                          ',
+    '   ##          ##     ##    ##     ##          ##                                          ',
+    '   ##          ##    ##      ##    ##          ##                                          ',
+    '   ##          ##    ##      ##    ##          ##                                          ',
+    '   ##    ##    ##    ##      ##    ##    ##    ##                                          ',
+    '   ##    ##    ##    ##      ##    ##    ##    ##                                          ',
+    '   ########    ##    ##      ##    ########    ##                                          ',
+    '   ########    ##    ##      ##    ########    ##                                          ',
+    '         ##    ##    ##      ##          ##    ##                                          ',
+    '         ##    ##    ##      ##          ##    ##                                          ',
+    '         ##    ##    ##      ##          ##    ##                                          ',
+    '         ##    ##     ##    ##           ##    ##                                          ',
+    '         ##    ##      ######            ##    ##                                          ',
+    '                                                                                          ',
+    '                                                                                          ',
+    '      ####       ####      #####     ########                                             ',
+    '     ##  ##     ##  ##     ##   ##   ##                                                   ',
+    '    ##    ##   ##    ##    ##    ##  ##                                                    ',
+    '    ##    ##   ##    ##    ##    ##  ########                                              ',
+    '    ########   ##    ##    ##    ##  ##                                                    ',
+    '    ##    ##   ##    ##    ##   ##   ##                                                    ',
+    '    ##    ##    ##  ##     #####     ##                                                    ',
+    '    ##    ##     ####      ##        ########                                              ',
+    '                                                                                          '
   ];
 
   var result = '';
@@ -29,9 +47,11 @@
       if (row[col] === '#') {
         var kw = keywords[ki % keywords.length];
         ki++;
-        for (var j = 0; j < kw.length && col < row.length; j++) {
+        var j = 0;
+        while (j < kw.length && col < row.length) {
           if (row[col] === '#') {
             line += kw[j];
+            j++;
           } else {
             line += ' ';
           }
