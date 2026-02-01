@@ -8,6 +8,8 @@ group :jekyll_plugins do
   gem "jekyll-feed"
   gem "jekyll-seo-tag"
   gem "jekyll-archives"
+  gem "jekyll-redirect-from"
+  gem "jekyll-include-cache"
 end
 
 gem "webrick"  # Required for Ruby 3+
