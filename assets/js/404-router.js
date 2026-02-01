@@ -1,19 +1,10 @@
 (function() {
-  var variants = ['stacktrace', 'gc', 'ascii', 'random', 'bytecode'];
-  var pick = variants[Math.floor(Math.random() * variants.length)];
+  document.body.classList.add('four04-takeover');
 
-  var el = document.getElementById('variant-' + pick);
+  var el = document.getElementById('variant-gc');
   if (el) el.classList.add('active');
 
-  var scriptMap = {
-    'gc': '/assets/js/404-gc.js',
-    'random': '/assets/js/404-random-exception.js',
-    'bytecode': '/assets/js/404-bytecode.js'
-  };
-
-  if (scriptMap[pick]) {
-    var script = document.createElement('script');
-    script.src = scriptMap[pick];
-    document.body.appendChild(script);
-  }
+  var script = document.createElement('script');
+  script.src = '/assets/js/404-gc.js';
+  document.body.appendChild(script);
 })();

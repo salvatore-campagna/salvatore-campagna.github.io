@@ -12,16 +12,55 @@ redirect_from:
 {% include lang.html %}
 
 <style>
+  /* --- Full-viewport takeover --- */
+  body.four04-takeover .page__hero,
+  body.four04-takeover .page__title,
+  body.four04-takeover .page__meta,
+  body.four04-takeover .breadcrumbs,
+  body.four04-takeover .sidebar,
+  body.four04-takeover footer,
+  body.four04-takeover #search-wrapper {
+    display: none !important;
+  }
+
+  body.four04-takeover .page__content,
+  body.four04-takeover .page__inner-wrap,
+  body.four04-takeover .page,
+  body.four04-takeover #main {
+    max-width: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+  }
+
+  .four04-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d1117;
+  }
+
   .four04-container pre {
     font-family: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
-    font-size: 0.8rem;
-    line-height: 1.7;
-    padding: 1.2rem;
-    border-radius: 0.5rem;
-    overflow-x: auto;
-    background: var(--card-bg, #1e1e1e);
-    border: 1px solid var(--card-border-color, #333);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    padding: 2rem;
+    border-radius: 0;
+    overflow: auto;
+    max-height: 90vh;
+    max-width: 90vw;
+    background: transparent;
+    border: none;
   }
+
+  .variant { display: none; }
+  .variant.active { display: block; }
 
   /* --- Variant: Stack trace --- */
   .stacktrace .exception { color: #e06c75; font-weight: bold; }
@@ -37,7 +76,7 @@ redirect_from:
   .stacktrace a.source:hover { color: #98c379; border-color: #98c379; }
   .stacktrace .hint {
     display: none; position: absolute;
-    background: var(--card-bg, #2a2a2e); border: 1px solid #61afef;
+    background: #1a1b26; border: 1px solid #61afef;
     color: #98c379; padding: 0.3rem 0.6rem; border-radius: 4px;
     font-size: 0.75rem; white-space: nowrap; z-index: 10;
     margin-top: -2rem; margin-left: 1rem;
@@ -46,7 +85,6 @@ redirect_from:
   .stacktrace .has-hint:hover .hint { display: block; }
   .stacktrace .ellipsis { color: #666; }
   .stacktrace .caused { color: #e06c75; font-weight: bold; }
-  .debug-hint { color: #888; font-size: 0.85rem; font-style: italic; margin-top: 1rem; }
 
   /* --- Variant: GC log --- */
   .gc-log { min-height: 320px; }
@@ -61,29 +99,19 @@ redirect_from:
   @keyframes fadeIn { to { opacity: 1; } }
   @keyframes blink { 50% { opacity: 0; } }
 
-  /* --- Variant: Image art --- */
-  .four04-image-wrap {
-    text-align: center;
-    margin: 1rem 0;
+  /* --- Variant: Image --- */
+  .four04-image-wrap a.popup {
+    display: contents;
+    pointer-events: none;
   }
   .four04-image-wrap img {
-    max-width: 100%;
-    width: 480px;
+    max-width: 90%;
+    max-height: 70vh;
+    width: auto;
     height: auto;
-    border-radius: 0.5rem;
-    border: 1px solid var(--card-border-color, #333);
+    object-fit: contain;
+    filter: drop-shadow(0 0 40px rgba(224, 108, 117, 0.3));
   }
-
-  /* --- Shared nav --- */
-  .four04-nav { margin-top: 1.5rem; font-size: 0.85rem; color: #888; font-style: italic; }
-  .four04-nav a {
-    color: #61afef; text-decoration: none;
-    border-bottom: 1px dotted #61afef; transition: color 0.2s;
-  }
-  .four04-nav a:hover { color: #98c379; border-color: #98c379; }
-
-  .variant { display: none; }
-  .variant.active { display: block; }
 </style>
 
 <div class="four04-container">
@@ -115,67 +143,28 @@ redirect_from:
     <span class="at">at</span> <span class="class">io.github.blog.content.PageRenderer</span>.render(<span class="source">PageRenderer.java:44</span>)
     <span class="at">at</span> <span class="class">io.github.blog.router.RequestDispatcher</span>.resolve(<span class="source">RequestDispatcher.java:401</span>)
     <span class="ellipsis">... 35 more</span></pre>
-    <p class="debug-hint">Tip: hover over the highlighted source locations to find your way around. Some frames are clickable.</p>
   </div>
 
   <!-- Variant 2: GC animation -->
   <div class="variant" id="variant-gc">
     <pre class="gc-log" id="gc-output"></pre>
-    <div class="four04-nav" id="gc-nav" style="display:none;">
-      <p>Page has been garbage collected. Navigate to a live object:</p>
-      <ul>
-        <li><a href="/">HomePageBean</a> &mdash; root context</li>
-        <li><a href="/archives/">ArchiveIndex</a> &mdash; all posts</li>
-        <li><a href="/tags/">TagRegistry</a> &mdash; search by tag</li>
-        <li><a href="/categories/">CategoryMapper</a> &mdash; browse categories</li>
-        <li><a href="/about/">AuthorProfile</a> &mdash; about the author</li>
-      </ul>
-    </div>
   </div>
 
-  <!-- Variant 3: Image art -->
+  <!-- Variant 3: Image -->
   <div class="variant" id="variant-ascii">
     <div class="four04-image-wrap">
       <img src="/assets/images/404-1.png" alt="404 - Page Not Found" />
-    </div>
-    <div class="four04-nav">
-      <p><strong>The page you're looking for has been <code>finalize()</code>'d.</strong></p>
-      <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/archives/">All Posts</a></li>
-        <li><a href="/tags/">Tags</a></li>
-        <li><a href="/about/">About</a></li>
-      </ul>
     </div>
   </div>
 
   <!-- Variant 4: Random exception -->
   <div class="variant" id="variant-random">
     <pre id="random-exception-output"></pre>
-    <div class="four04-nav">
-      <p><strong>The page you're looking for doesn't exist.</strong> <span style="color:#555">(Refresh for a different exception.)</span></p>
-      <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/archives/">All Posts</a></li>
-        <li><a href="/tags/">Tags</a></li>
-        <li><a href="/about/">About</a></li>
-      </ul>
-    </div>
   </div>
 
   <!-- Variant 5: Decompiled bytecode -->
   <div class="variant" id="variant-bytecode">
     <pre class="bytecode" id="bytecode-output"></pre>
-    <div class="four04-nav">
-      <p><strong>ATHROW</strong> &mdash; the page was never allocated. <span style="color:#555">(Refresh for a different 404.)</span></p>
-      <ul>
-        <li><a href="/">Home</a> &mdash; GOTO L0</li>
-        <li><a href="/archives/">All Posts</a> &mdash; INVOKEVIRTUAL</li>
-        <li><a href="/tags/">Tags</a> &mdash; LOOKUPSWITCH</li>
-        <li><a href="/categories/">Categories</a> &mdash; TABLESWITCH</li>
-        <li><a href="/about/">About</a> &mdash; GETFIELD</li>
-      </ul>
-    </div>
   </div>
 
 </div>
