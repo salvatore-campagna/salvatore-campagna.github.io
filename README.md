@@ -200,7 +200,7 @@ The giscus section in `_config.yml` should look like this (already configured):
 
 ```yaml
 comments:
-  provider: giscus
+  active: giscus
   giscus:
     repo: salvatore-campagna/salvatore-campagna.github.io
     repo_id: R_kgDOQ8OMWw
