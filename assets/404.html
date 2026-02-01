@@ -11,36 +11,91 @@ redirect_from:
 
 {% include lang.html %}
 
+<style>
+  .stacktrace {
+    font-family: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    padding: 1.2rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    background: var(--card-bg, #1e1e1e);
+    border: 1px solid var(--card-border-color, #333);
+  }
+  .stacktrace .exception { color: #e06c75; font-weight: bold; }
+  .stacktrace .message { color: #e5c07b; }
+  .stacktrace .at { color: #888; }
+  .stacktrace .class { color: #abb2bf; }
+  .stacktrace .source { color: #61afef; }
+  .stacktrace a.source {
+    text-decoration: none;
+    border-bottom: 1px dotted #61afef;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .stacktrace a.source:hover {
+    color: #98c379;
+    border-color: #98c379;
+  }
+  .stacktrace .hint {
+    display: none;
+    position: absolute;
+    background: var(--card-bg, #2a2a2e);
+    border: 1px solid #61afef;
+    color: #98c379;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 10;
+    margin-top: -2rem;
+    margin-left: 1rem;
+  }
+  .stacktrace .has-hint {
+    position: relative;
+    display: inline;
+  }
+  .stacktrace .has-hint:hover .hint {
+    display: block;
+  }
+  .stacktrace .ellipsis { color: #666; }
+  .stacktrace .caused { color: #e06c75; font-weight: bold; }
+  .debug-hint {
+    color: #888;
+    font-size: 0.85rem;
+    font-style: italic;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+  }
+</style>
+
 <div class="content">
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">Exception</span> in thread <span class="s">"browser-main"</span> io.github.blog.<span class="nc">PageNotFoundException</span>: <span class="mi">404</span> - The requested resource could not be located
-    at io.github.blog.router.<span class="nc">RequestDispatcher</span>.resolve(<span class="nc">RequestDispatcher</span>.java:<span class="mi">404</span>)
-    at io.github.blog.router.<span class="nc">RequestDispatcher</span>.forward(<span class="nc">RequestDispatcher</span>.java:<span class="mi">389</span>)
-    at io.github.blog.servlet.<span class="nc">BlogServlet</span>.doGet(<span class="nc">BlogServlet</span>.java:<span class="mi">142</span>)
-    at javax.servlet.http.<span class="nc">HttpServlet</span>.service(<span class="nc">HttpServlet</span>.java:<span class="mi">750</span>)
-    at javax.servlet.http.<span class="nc">HttpServlet</span>.service(<span class="nc">HttpServlet</span>.java:<span class="mi">847</span>)
-    at org.eclipse.jetty.servlet.<span class="nc">ServletHolder</span>.handle(<span class="nc">ServletHolder</span>.java:<span class="mi">799</span>)
-    at org.eclipse.jetty.servlet.<span class="nc">ServletHandler</span>.doHandle(<span class="nc">ServletHandler</span>.java:<span class="mi">550</span>)
-    at org.eclipse.jetty.server.handler.<span class="nc">ScopedHandler</span>.nextHandle(<span class="nc">ScopedHandler</span>.java:<span class="mi">233</span>)
-    at org.eclipse.jetty.server.handler.<span class="nc">ContextHandler</span>.doHandle(<span class="nc">ContextHandler</span>.java:<span class="mi">1440</span>)
-    at org.eclipse.jetty.server.<span class="nc">Server</span>.handle(<span class="nc">Server</span>.java:<span class="mi">524</span>)
-    at org.eclipse.jetty.server.<span class="nc">HttpChannel</span>.lambda$handle$<span class="mi">1</span>(<span class="nc">HttpChannel</span>.java:<span class="mi">404</span>)
-    at org.eclipse.jetty.server.<span class="nc">HttpChannel</span>.dispatch(<span class="nc">HttpChannel</span>.java:<span class="mi">633</span>)
-    ... <span class="mi">24</span> more
-<span class="nc">Caused</span> by: java.io.<span class="nc">FileNotFoundException</span>: /posts/the-page-you-were-looking-for (No such file or directory)
-    at java.base/java.io.<span class="nc">FileInputStream</span>.open0(<span class="nc">Native</span> <span class="nc">Method</span>)
-    at java.base/java.io.<span class="nc">FileInputStream</span>.open(<span class="nc">FileInputStream</span>.java:<span class="mi">216</span>)
-    at java.base/java.io.<span class="nc">FileInputStream</span>.&lt;init&gt;(<span class="nc">FileInputStream</span>.java:<span class="mi">157</span>)
-    at io.github.blog.content.<span class="nc">ContentResolver</span>.loadPage(<span class="nc">ContentResolver</span>.java:<span class="mi">87</span>)
-    at io.github.blog.router.<span class="nc">RequestDispatcher</span>.resolve(<span class="nc">RequestDispatcher</span>.java:<span class="mi">401</span>)
-    ... <span class="mi">35</span> more
-</code></pre></div></div>
+<pre class="stacktrace"><span class="exception">Exception</span> in thread <span class="message">"browser-main"</span> io.github.blog.<span class="exception">PageNotFoundException</span>: <span class="message">404 - The requested resource could not be located</span>
+    <span class="at">at</span> <span class="class">io.github.blog.router.RequestDispatcher</span>.resolve(<span class="has-hint"><a class="source" href="/">RequestDispatcher.java:404</a><span class="hint">→ Go to Home Page</span></span>)
+    <span class="at">at</span> <span class="class">io.github.blog.router.RequestDispatcher</span>.forward(<span class="has-hint"><a class="source" href="/archives/">RequestDispatcher.java:389</a><span class="hint">→ Browse All Posts</span></span>)
+    <span class="at">at</span> <span class="class">io.github.blog.router.RouteRegistry</span>.matchPath(<span class="has-hint"><a class="source" href="/tags/">RouteRegistry.java:156</a><span class="hint">→ Search by Tag</span></span>)
+    <span class="at">at</span> <span class="class">io.github.blog.servlet.BlogServlet</span>.doGet(<span class="has-hint"><a class="source" href="/categories/">BlogServlet.java:142</a><span class="hint">→ Browse Categories</span></span>)
+    <span class="at">at</span> <span class="class">io.github.blog.servlet.BlogServlet</span>.handleRequest(<span class="has-hint"><a class="source" href="/about/">BlogServlet.java:98</a><span class="hint">→ About the Author</span></span>)
+    <span class="at">at</span> <span class="class">javax.servlet.http.HttpServlet</span>.service(<span class="source">HttpServlet.java:750</span>)
+    <span class="at">at</span> <span class="class">javax.servlet.http.HttpServlet</span>.service(<span class="source">HttpServlet.java:847</span>)
+    <span class="at">at</span> <span class="class">org.eclipse.jetty.servlet.ServletHolder</span>.handle(<span class="source">ServletHolder.java:799</span>)
+    <span class="at">at</span> <span class="class">org.eclipse.jetty.servlet.ServletHandler</span>.doHandle(<span class="source">ServletHandler.java:550</span>)
+    <span class="at">at</span> <span class="class">org.eclipse.jetty.server.handler.ScopedHandler</span>.nextHandle(<span class="source">ScopedHandler.java:233</span>)
+    <span class="at">at</span> <span class="class">org.eclipse.jetty.server.handler.ContextHandler</span>.doHandle(<span class="source">ContextHandler.java:1440</span>)
+    <span class="at">at</span> <span class="class">org.eclipse.jetty.server.Server</span>.handle(<span class="source">Server.java:524</span>)
+    <span class="at">at</span> <span class="class">org.eclipse.jetty.server.HttpChannel</span>.lambda$handle$1(<span class="source">HttpChannel.java:404</span>)
+    <span class="at">at</span> <span class="class">org.eclipse.jetty.server.HttpChannel</span>.dispatch(<span class="source">HttpChannel.java:633</span>)
+    <span class="ellipsis">... 24 more</span>
+<span class="caused">Caused by</span>: java.io.<span class="caused">FileNotFoundException</span>: <span class="message">/posts/the-page-you-were-looking-for (No such file or directory)</span>
+    <span class="at">at</span> <span class="class">java.base/java.io.FileInputStream</span>.open0(<span class="source">Native Method</span>)
+    <span class="at">at</span> <span class="class">java.base/java.io.FileInputStream</span>.open(<span class="source">FileInputStream.java:216</span>)
+    <span class="at">at</span> <span class="class">java.base/java.io.FileInputStream</span>.&lt;init&gt;(<span class="source">FileInputStream.java:157</span>)
+    <span class="at">at</span> <span class="class">io.github.blog.content.ContentResolver</span>.loadPage(<span class="has-hint"><a class="source" href="/posts/building-hsdis-macos-apple-silicon/">ContentResolver.java:87</a><span class="hint">→ Read: Making Java's Machine Code Visible</span></span>)
+    <span class="at">at</span> <span class="class">io.github.blog.content.ContentResolver</span>.resolveMarkdown(<span class="has-hint"><a class="source" href="/posts/sparse-livedocs-lucene-memory-optimization/">ContentResolver.java:63</a><span class="hint">→ Read: Rethinking LiveDocs in Lucene</span></span>)
+    <span class="at">at</span> <span class="class">io.github.blog.content.PageRenderer</span>.render(<span class="source">PageRenderer.java:44</span>)
+    <span class="at">at</span> <span class="class">io.github.blog.router.RequestDispatcher</span>.resolve(<span class="source">RequestDispatcher.java:401</span>)
+    <span class="ellipsis">... 35 more</span></pre>
+
+<p class="debug-hint">Tip: hover over the highlighted source locations to find your way around. Some frames are clickable.</p>
 
 <p><strong>The page you're looking for doesn't exist.</strong></p>
-
-<p>Maybe try:</p>
-<ul>
-  <li><a href="/">Home</a></li>
-  <li><a href="/about/">About</a></li>
-  <li><a href="/tags/">All Posts by Tag</a></li>
-</ul>
 </div>
