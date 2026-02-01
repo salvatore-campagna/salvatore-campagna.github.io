@@ -100,6 +100,31 @@ main:
     url: /tags/
 ```
 
+## GitHub Account
+
+This blog is published under the **salvatore-campagna** GitHub account at `salvatore-campagna.github.io`.
+
+Set the correct git user for this repo:
+
+```bash
+cd ~/workspace/blog
+git config user.name "Salvatore Campagna"
+git config user.email "your-personal-email@example.com"
+```
+
+If you have multiple GitHub accounts configured with `gh`, switch between them:
+
+```bash
+# Check which account is active
+gh auth status
+
+# Switch to the blog account
+gh auth switch -u salvatore-campagna
+
+# Switch to the other account
+gh auth switch -u salvatorecampagna
+```
+
 ## Directory Structure
 
 ```
