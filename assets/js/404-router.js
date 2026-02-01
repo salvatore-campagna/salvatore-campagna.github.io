@@ -7,7 +7,6 @@
 
   var scriptMap = {
     'gc': '/assets/js/404-gc.js',
-    'ascii': '/assets/js/404-ascii.js',
     'random': '/assets/js/404-random-exception.js',
     'bytecode': '/assets/js/404-bytecode.js'
   };

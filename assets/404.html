@@ -61,12 +61,17 @@ redirect_from:
   @keyframes fadeIn { to { opacity: 1; } }
   @keyframes blink { 50% { opacity: 0; } }
 
-  /* --- Variant: ASCII art --- */
-  .ascii-art {
-    font-size: 0.65rem;
-    line-height: 1.2;
-    color: #e06c75;
-    letter-spacing: 0.05em;
+  /* --- Variant: Image art --- */
+  .four04-image-wrap {
+    text-align: center;
+    margin: 1rem 0;
+  }
+  .four04-image-wrap img {
+    max-width: 100%;
+    width: 480px;
+    height: auto;
+    border-radius: 0.5rem;
+    border: 1px solid var(--card-border-color, #333);
   }
 
   /* --- Shared nav --- */
@@ -128,9 +133,11 @@ redirect_from:
     </div>
   </div>
 
-  <!-- Variant 3: ASCII art -->
+  <!-- Variant 3: Image art -->
   <div class="variant" id="variant-ascii">
-    <pre class="ascii-art" id="ascii-output"></pre>
+    <div class="four04-image-wrap">
+      <img src="/assets/images/404-1.png" alt="404 - Page Not Found" />
+    </div>
     <div class="four04-nav">
       <p><strong>The page you're looking for has been <code>finalize()</code>'d.</strong></p>
       <ul>
